@@ -120,19 +120,19 @@ et#40et
  ^tua qa+1"e 1w et-32et ^tua et#40et'
 
  !* ESC-v goes back a page !
- qa-118"e -24l f<'
+ qa-^^v"e -24l f<'
 
  !* ESC-< goes to top of file !
- qa-60"e .ud 0j f<'
+ qa-^^<"e .ud 0j f<'
 
  !* ESC-> goes to bottom of file !
- qa-62"e .ud zj f<'
+ qa-^^>"e .ud zj f<'
 
  !* ESC-p positions screen; gets one more char !
- qa-112"e .,6:w f<'
+ qa-^^p"e .,6:w f<'
 
  !* ESC-ESC--go back to TECO !
- qa-27"e
+ qa-^^"e
   5,7:w  et-40et
   ^c
  '
