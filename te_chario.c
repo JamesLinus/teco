@@ -17,7 +17,6 @@ extern void hup_handler();
 #define SIGINTMASK 2
 #endif
 int lf_sw;	/* nonzero: make up a LF following an entered CR */
-int ttyflags;	/* flags for (stdin) file descriptor */
 
 /* original and new tty flags */
 struct termios tty_orig, tty_new, tc_noint;
@@ -77,6 +76,7 @@ int arg;
 		tty_new.c_iflag &= ~(INLCR|IGNCR|ICRNL|IXON|IXOFF);
 		tty_new.c_lflag &= ~(ICANON|ECHO);
 		tty_new.c_lflag |= (ISIG);
+		tty_new.c_oflag &= ~(ONLCR);
 		tty_new.c_cc[VMIN] = 1;
 		tty_new.c_cc[VTIME] = 0;
 
