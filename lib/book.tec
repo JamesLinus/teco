@@ -29,13 +29,13 @@ et#40et
 <
 
  !* Read key into Qa, update and sleep if none available !
- ^tua qa+1"e 1w et-32et ^tua et#40et'
+ ^tua qa+1"e .,6:w  1w  et-32et ^tua et#40et'
 
  !* Space bar--advance one page !
- qa-32"e 20l  f<'
+ qa-32"e 2:w-1l  f<'
 
  !* b--back one page !
- qa-98"e -20l  f<'
+ qa-98"e 2:w-1*-1l  f<'
 
  !* d--forward half page !
  qa-100"e 10l  f<'
@@ -47,7 +47,7 @@ et#40et
  qa-103"e .uc 0j f<'
 
  !* G--go to bottom !
- qa-71"e .uc zj f<'
+ qa-71"e .uc zj  -1l f<'
 
  !* '--jump to previous !
  qa-39"e .ua qcj qauc f<'
