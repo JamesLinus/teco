@@ -35,7 +35,7 @@ et#40et
  qa-32"e 2:w-1l  f<'
 
  !* b--back one page !
- qa-98"e 2:w-1*-1l  f<'
+ qa-98"e -1*(2:w-1)l  f<'
 
  !* d--forward half page !
  qa-100"e 10l  f<'
@@ -51,6 +51,15 @@ et#40et
 
  !* '--jump to previous !
  qa-39"e .ua qcj qauc f<'
+
+ !* return--forward one line !
+ qa-13"e l f<'
+
+ !* j--forward one line !
+ qa-106"e l f<'
+
+ !* k--backward one line !
+ qa-107"e -l f<'
 
  !* q--done !
  qa-113"e 0; '
