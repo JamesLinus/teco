@@ -21,12 +21,6 @@
 #endif /* SIGWINCH */
 #include "te_defs.h"
 
-#ifdef VSTA
-#define ospeed 38400
-#else
-extern short ospeed;
-#endif
-
 /* maximum screen height and width (horiz and vert, not height and vidth) */
 #define W_MAX_V 70
 #define W_MAX_H 150
@@ -66,32 +60,6 @@ char *curs_p;			/* pointer to cursor loc in window image */
 short curs_crflag;		/* flag that cursor is on a CR */
 short redraw_sw;		/* forces absolute redraw */
 
-
-/*
- * fill characters and terminal speeds:
- * 0th entry used when std out is not a terminal
- */
-int win_speeds[] = { 
-	0, 0, B9600, B4800, B2400, B1800, B1200, B600,
-	B300, B200, B150, B134, B110 };
-
-/* delay for erase-screen */
-char win_dlye[] =   { 
-	0, 90, 45, 23, 11, 9, 6, 3, 1, 1, 1, 1, 1 };
-
-/* delay for scroll ops */
-char win_dlys[] =   { 
-	0, 60, 30, 15, 7, 6, 4, 2, 1, 1, 0, 0, 0 };
-
-/* delay for erase line */
-char win_dlyl[] =   { 
-	0, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-/* delay for other control functions */
-char win_dlyc[] =   {
-	0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-short win_speed;
-
 /*
  * routine to perform simple scope operations
  * (an attempt to concentrate VT-100 specific things in one place)
@@ -104,20 +72,14 @@ vt(func)
 	{
 	case VT_CLEAR:			/* clear screen */
 		fputs("\033[H\033[J", stdout);
-		for (t = 0; t < win_dlye[win_speed]; t++)
-			putchar('\0');	/* fill chars */
 		break;
 
 	case VT_EEOL:			/* erase to end of line */
 		fputs("\033[K", stdout);
-		for (t = 0; t < win_dlyl[win_speed]; t++)
-			putchar('\0');	/* fill chars */
 		break;
 
 	case VT_EBOL:			/* erase from beginning of line */
 		fputs("\033[1K", stdout);
-		for (t = 0; t < win_dlyl[win_speed]; t++)
-			putchar('\0');	/* fill chars */
 		break;
 
 	case VT_SETSPEC1:		/* reverse video */
@@ -319,22 +281,8 @@ window(arg)
 		}
 		break;
 
-	/* initialize window - find output speed */
+	/* initialize window */
 	case WIN_INIT:
-		if (out_noterm) {
-			/* std out is not a terminal */
-			win_speed = 0;
-		} else {
-			int lim = sizeof(win_speeds);
-
-			for (win_speed = 1; win_speed < lim; win_speed++) {
-				if ((win_speeds[win_speed] == ospeed))
-					break;
-			}
-			if ((win_speed < 0) || (win_speed >= lim)) {
-				win_speed = B19200;
-			}
-		}
 
 		/* set up screen image buffer */
 		w_init();
