@@ -336,3 +336,6 @@ extern struct qp *msp;				/* macro stack pointer */
 extern struct exp_entry estack[];	/* expression stack */
 extern struct exp_entry *esp;		/* expression stack pointer */
 
+/* backward delete from TTY */
+extern char delchar;
+

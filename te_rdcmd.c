@@ -37,7 +37,7 @@ prompt:
 		/* if terminal input */
 		if (!eisw && !inp_noterm) {
 			/* process rubout */
-			if ((c = gettty()) == DEL) {
+			if ((c = gettty()) == delchar) {
 				/* if at beginning, ignore */
 				if (!ccount)
 					goto restart;

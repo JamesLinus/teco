@@ -23,6 +23,9 @@ int lf_sw;	/* nonzero: make up a LF following an entered CR */
 /* original and new tty flags */
 struct termios tty_orig, tty_new, tc_noint;
 
+/* character which back-deletes a character in interactive mode */
+char delchar = DEL;
+
 #ifndef DEBUG
 
 /* info structure for ^C interrupt */
@@ -65,6 +68,9 @@ int arg;
 
 		/* nonzero if input not a terminal */
 		inp_noterm = (ioerr && (errno == ENOTTY));
+		if (!inp_noterm) {
+			delchar = tty_orig.c_cc[VERASE];
+		}
 
 		/* get std output characteristics */
 		ioerr = tcgetattr(fileno(stdout), &tmpbuf);
