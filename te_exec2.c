@@ -1,28 +1,36 @@
-/* TECO for Ultrix   Copyright 1986 Matt Fichtenbaum						*/
-/* This program and its components belong to GenRad Inc, Concord MA 01742	*/
-/* They may be copied if this copyright notice is included					*/
+/* TECO for Ultrix   Copyright 1986 Matt Fichtenbaum */
+/* This program and its components belong to GenRad Inc, Concord MA 01742 */
+/* They may be copied if this copyright notice is included */
 
 /* te_exec2.c   process "E" and "F" commands   2/26/87 */
 #include "te_defs.h"
 
-struct qh oldcstring;						/* hold command string during ei */
+struct qh oldcstring;			/* hold command string during ei */
 
 /* file stuff for input/output files */
 
 struct infiledata pi_file = { 
 	NULL, -1 };	/* input files */
 struct infiledata si_file = { 
-	NULL, -1 };
-struct infiledata *infile = &pi_file;		/* pointer to currently active input file structure */
-struct outfiledata po_file, so_file;		/* output files */
-struct outfiledata *outfile = &po_file;		/* pointer to currently active output file structure */
-FILE *eisw;									/* indirect command file pointer */
+	NULL, -1
+};
+/* pointer to currently active input file structure */
+struct infiledata *infile = &pi_file;
+
+/* output files */
+struct outfiledata po_file, so_file;
+
+/* pointer to currently active output file structure */
+struct outfiledata *outfile = &po_file;
+
+/* indirect command file pointer */
+FILE *eisw;
 
 /* process E commands */
 
 do_e()
 {
-	int c;							/* temps */
+	int c;					/* temps */
 	int old_var;
 	FILE *t_eisw;
 
@@ -79,7 +87,7 @@ do_e()
 		outfile = &so_file;
 		break;
 
-	case 'b':				/* open read/write with backup */
+	case 'b':			/* open read/write with backup */
 		/* read the name */
 		if (!read_filename(1, 'r'))
 			ERROR(E_NFI);
@@ -286,7 +294,7 @@ do_e()
 		}
 		break;
 
-	case 'y':				/* EY is Y without protection */
+	case 'y':			/* EY is Y without protection */
 		if (esp->flag1)
 			ERROR(E_NYA);
 		dot = z = 0;			/* clear buffer */
@@ -304,7 +312,8 @@ do_e()
 		break;
 
 	case 'q':				/* system command */
-		esp->val1 = do_eq();			/* do this as a separate routine */
+		/* do this as a separate routine */
+		esp->val1 = do_eq();
 		esp->flag1 = colonflag;
 		colonflag = 0;
 		esp->op = OP_START;
@@ -314,12 +323,14 @@ do_e()
 		ERROR(E_IEC);
 	}
 }
-/* routine to execute a system command			*/
-/* this is done by forking off another process	*/
-/* to execute a shell via 'execl'				*/
-/* routine returns -1 if success, 0 if error in fork */
 
-int do_eq()
+/*
+ * routine to execute a system command
+ * this is done by forking off another process
+ * to execute a shell via 'execl'
+ * routine returns -1 if success, 0 if error in fork
+ */
+do_eq()
 {
 	int t;
 	int status;
@@ -327,49 +338,93 @@ int do_eq()
 	extern char *getenv();
 
 	build_string(&sysbuf);
-	if (sysbuf.z > CELLSIZE-2) ERROR(E_STL);	/* command must fit within one cell */
-	sysbuf.f->ch[sysbuf.z] = '\0';				/* store terminating null */
-	if (!(pname = getenv("SHELL"))) ERROR(E_SYS);	/* read shell name */
 
-	if (!esp->flag1)			/* if not m,nEQ command */
-	{
-		if (win_data[7]) window(WIN_SUSP);			/* restore full screen */
-		crlf();										/* force characters out */
-		setup_tty(TTY_SUSP);						/* restore terminal to normal mode */
+	/* command must fit within one cell */
+	if (sysbuf.z > CELLSIZE-2)
+		ERROR(E_STL);
 
-		t = vfork();							/* fork a new process */
-		if (t == 0)								/* if this is the child */
-		{
-			execl(pname, pname, "-c", &sysbuf.f->ch[0], 0);		/* call the named Unix routine */
-			printf("Error in 'execl'\n");		/* normally shouldn't get here */
+	/* store terminating null */
+	sysbuf.f->ch[sysbuf.z] = '\0';
+
+	/* read shell name */
+	if (!(pname = getenv("SHELL")))
+		ERROR(E_SYS);
+
+	/* if not m,nEQ command */
+	if (!esp->flag1) {
+		/* restore full screen */
+		if (win_data[7])
+			window(WIN_SUSP);
+
+		/* force characters out */
+		crlf();
+
+		/* restore terminal to normal mode */
+		setup_tty(TTY_SUSP);
+
+		/* fork a new process */
+		t = vfork();
+
+		/* if this is the child */
+		if (t == 0) {
+			/* call the named Unix routine */
+			execl(pname, pname, "-c", &sysbuf.f->ch[0], 0);
+
+			/* normally shouldn't get here */
+			printf("Error in 'execl'\n");
 			exit(1);
 		}
 
-		while (wait(&status) != t);				/* if parent, wait for child to finish */
-		if (status & 0xFF) t = -1;			/* keep failure indication from child */
+		/* if parent, wait for child to finish */
+		while (wait(&status) != t)
+			;
 
-		setup_tty(TTY_RESUME);						/* restore terminal to teco mode */
-		if (win_data[7])					/* if window was enabled */
-		{
-			vt(VT_SETSPEC1);				/* set reverse video */
-			fputs("Type RETURN to continue", stdout);		/* require CR before continuing */
-			vt(VT_CLRSPEC);					/* reverse video off */
-			while (gettty() != LF);
-			putchar(CR);					/* back to beginning of line */
-			vt(VT_EEOL);					/* and erase the message */
-			window(WIN_RESUME);				/* re-enable window */
-			window(WIN_REDRAW);				/* and make it redraw afterwards */
+		/* keep failure indication from child */
+		if (status & 0xFF)
+			t = -1;
+
+		/* restore terminal to teco mode */
+		setup_tty(TTY_RESUME);
+
+		/* if window was enabled */
+		if (win_data[7]) {
+			/* set reverse video */
+			vt(VT_SETSPEC1);
+
+			/* require CR before continuing */
+			fputs("Type RETURN to continue", stdout);
+
+			/* reverse video off */
+			vt(VT_CLRSPEC);
+
+			while (gettty() != LF)
+				;
+
+			/* back to beginning of line */
+			putchar(CR);
+
+			/* and erase the message */
+			vt(VT_EEOL);
+
+			/* re-enable window */
+			window(WIN_RESUME);
+
+			/* and make it redraw afterwards */
+			window(WIN_REDRAW);
 		}
-	}
+	} else
+		/* m,nEQ command */
+		t = do_eq1(pname);
 
-	else t = do_eq1(pname);					/* m,nEQ command */
-
-	return( (t == -1) ? 0 : -1);			/* return failure if fork failed or proc status nonzero */
+	/* return failure if fork failed or proc status nonzero */
+	return( (t == -1) ? 0 : -1);
 }
-/* Execute m,nEQtext$ command.  Run "text" as a Unix command that	*/
-/* receives its std input from chars m through n of teco's buffer.	*/
-/* Output from the command is placed in Q#.							*/
 
+/*
+ * Execute m,nEQtext$ command.  Run "text" as a Unix command that
+ * receives its std input from chars m through n of teco's buffer.
+ * Output from the command is placed in Q#.
+ */
 do_eq1(shell)
 char *shell;			/* arg is pointer to shell name */
 {
@@ -516,7 +571,6 @@ char *shell;			/* arg is pointer to shell name */
  * files into local buffer.  EN$ gets next filespec
  * into filespec buffer.
  */
-
 struct qh en_buf;		/* header for storage for file list */
 struct qp en_ptr;		/* pointer to load/read file list */
 static char glob_cmd0[] = {
@@ -526,19 +580,33 @@ static char glob_cmd0[] = {
 do_en(){
 	int t;
 
-	if (build_string(&fbuf))					/* if a file string is specified */
-	{
-		if (fbuf.z > CELLSIZE-2) ERROR(E_STL);		/* upper limit on string length */
-		fbuf.f->ch[fbuf.z] = '\0';				/* terminating null */
-		t = do_glob(&en_buf);					/* glob the result */
-		en_ptr.p = en_buf.f;					/* set the buffer pointer to the beginning of the buffer */
+	/* if a file string is specified */
+	if (build_string(&fbuf)) {
+
+		/* upper limit on string length */
+		if (fbuf.z > CELLSIZE-2)
+			ERROR(E_STL);
+
+		/* terminating null */
+		fbuf.f->ch[fbuf.z] = '\0';
+
+		/* glob the result */
+		t = do_glob(&en_buf);
+
+		/* set the buffer pointer to the beginning of the buffer */
+		en_ptr.p = en_buf.f;
 		en_ptr.dot = en_ptr.c = 0;
-	}
-	else										/* if no string, get next filename */
-	{
+	} else {
+
+		/* if no string, get next filename */
 		do_en_next();
-		t = (fbuf.z) ? -1 : 0;					/* t zero if no more filespecs */
-		if (!t && !colonflag) ERROR(E_NFI);		/* if no colon, end of spec is an error */
+
+		/* t zero if no more filespecs */
+		t = (fbuf.z) ? -1 : 0;
+
+		/* if no colon, end of spec is an error */
+		if (!t && !colonflag)
+			ERROR(E_NFI);
 	}
 	return (t);
 }
@@ -652,92 +720,141 @@ do_en_next()
 {
 	char c;
 
-	make_buffer(&fbuf);							/* initialize the filespec buffer */
+	/* initialize the filespec buffer */
+	make_buffer(&fbuf);
 	fbuf.z = 0;
 
-	while(en_ptr.dot < en_buf.z)				/* stop at end of string */
-	{
+	/* stop at end of string */
+	while(en_ptr.dot < en_buf.z) {
 		c = en_ptr.p->ch[en_ptr.c];
 		fwdc(&en_ptr);
-		if (!c) break;							/* null is terminator between file specs */
-		fbuf.f->ch[fbuf.z++] = c;				/* store char */
-		if (fbuf.z >= CELLSIZE-1) ERROR(E_STL);		/* limit on filespec size */
+
+		/* null is terminator between file specs */
+		if (!c) break;
+
+		/* store char */
+		fbuf.f->ch[fbuf.z++] = c;
+
+		/* limit on filespec size */
+		if (fbuf.z >= CELLSIZE-1)
+			ERROR(E_STL);
 	}
 
-	fbuf.f->ch[fbuf.z] = '\0';					/* filespec ends with NULL */
+	/* filespec ends with NULL */
+	fbuf.f->ch[fbuf.z] = '\0';
 }
-
-/* routine to read a file name				*/
-/* reads it into fbuf text area				*/
-/* returns nonzero if a name, 0 if none		*/
-/* flag nonzero => empty name clears filespec buffer */
-/* func is 'r' for ER or EB cmds, 'i' for EI, 'w' for EW */
 
-int read_filename(flag, func)
+/*
+ * routine to read a file name
+ * reads it into fbuf text area
+ * returns nonzero if a name, 0 if none
+ * flag nonzero => empty name clears filespec buffer
+ * func is 'r' for ER or EB cmds, 'i' for EI, 'w' for EW
+ */
+read_filename(flag, func)
 int flag;
 char func;
 {
 	int i, t, expand;
 	char c;
-	struct qh temp_buff;						/* temp buffer for globbing filespec */
+	struct qh temp_buff;		/* temp buffer for globbing filespec */
 
-	if (!(t = build_string(&fbuf)))				/* if no name spec'd */
-	{
-		if (flag) fbuf.z = 0;					/* if no name spec'd, set length to 0 */
-	}
-	else
-	{
-		if (fbuf.z > CELLSIZE-2) ERROR(E_STL);
-		fbuf.f->ch[fbuf.z] = '\0';				/* store terminating NULL */
+	/* if no name spec'd */
+	if (!(t = build_string(&fbuf))) {
+		/* if no name spec'd, set length to 0 */
+		if (flag)
+			fbuf.z = 0;
+	} else {
+		if (fbuf.z > CELLSIZE-2)
+			ERROR(E_STL);
+
+		/* store terminating NULL */
+		fbuf.f->ch[fbuf.z] = '\0';
 
 		/* check for characters to be expanded by the shell */
 
 		for (i = 0; i < fbuf.z; i++)
-			if ((c = fbuf.f->ch[i]) == '*' || c == '?' || c == '[' || c == 0173) break;
-		if ( (expand = (i < fbuf.z)) || fbuf.f->ch[0] == '~')	/* one of these was found, or first char is ~ */
-		{
-			temp_buff.f = NULL;					/* make a temp buffer to glob filename into */
+			if ((c = fbuf.f->ch[i]) == '*' || c == '?' ||
+					c == '[' || c == 0173)
+				break;
+
+		/* one of these was found, or first char is ~ */
+		if ( (expand = (i < fbuf.z)) || fbuf.f->ch[0] == '~') {
+
+			/* make a temp buffer to glob filename into */
+			temp_buff.f = NULL;
 			make_buffer(temp_buff);
-			do_glob(&temp_buff);				/* expand the file name */
-			if (temp_buff.z == 0)				/* no match */
-			{
-				free_blist(temp_buff.f);		/* return the storage */
-				ERROR(func == 'w' ? E_COF : E_FNF);	/* "can't open" or "file not found" */
-			}
-			else if (temp_buff.v == 0)			/* if exactly one file name */
-			{
-				free_blist(fbuf.f);				/* return the old file spec */
-				fbuf.f = temp_buff.f;			/* put the temp buffer there instead */
+
+			/* expand the file name */
+			do_glob(&temp_buff);
+
+			/* no match */
+			if (temp_buff.z == 0) {
+				/* return the storage */
+				free_blist(temp_buff.f);
+
+				/* "can't open" or "file not found" */
+				ERROR(func == 'w' ? E_COF : E_FNF);
+			} else if (temp_buff.v == 0) {
+				/* if exactly one file name */
+
+				/* return the old file spec */
+				free_blist(fbuf.f);
+
+				/* put the temp buffer there instead */
+				fbuf.f = temp_buff.f;
 				fbuf.z = temp_buff.z;
-				if (fbuf.z > CELLSIZE-2) ERROR(E_STL);
+				if (fbuf.z > CELLSIZE-2)
+					ERROR(E_STL);
 				fbuf.f->ch[fbuf.z] = '\0';
 
-				if (func == 'w' && expand)		/* if this is EW and 'twas from a wildcard expansion */
-				{
-					vt(VT_SETSPEC1);			/* "file XXXX already exists: overwrite? [yn]" */
+				/*
+				 * if this is EW and 'twas from a
+				 * wildcard expansion
+				 */
+				if (func == 'w' && expand) {
+
+					/*
+					 * "file XXXX already exists:
+					 * overwrite? [yn]"
+					 */
+					vt(VT_SETSPEC1);
 					fputs("File ", stdout);
 					fputs(fbuf.f->ch, stdout);
-					fputs(" already exists: overwrite? [ny] ", stdout);
+			fputs(" already exists: overwrite? [ny] ", stdout);
 					vt(VT_CLRSPEC);
-					c = gettty();				/* read user's response */
+
+					/* read user's response */
+					c = gettty();
 					putchar(CR);
-					vt(VT_EEOL);				/* clean up the screen */
-					if (c != 'y') ERROR(E_COF);	/* abort here */
+
+					/* clean up the screen */
+					vt(VT_EEOL);
+
+					/* abort here */
+					if (c != 'y') ERROR(E_COF);
 				}
-			}
-			
-			    else								/* multiple file specs */
-			{
-				if (func != 'r' || !(ez_val & EZ_MULT))				/* if multiple file specs here aren't allowed */
-				{
-					free_blist(temp_buff.f);			/* return the storage */
+			} else {
+				/* multiple file specs */
+
+				/* if multiple file specs here aren't allowed */
+				if (func != 'r' || !(ez_val & EZ_MULT)) {
+
+					/* return the storage */
+					free_blist(temp_buff.f);
 					ERROR(E_AMB);
 				}
-				free_blist(en_buf.f);					/* substitute the expansion for the "EN" list */
-				en_ptr.p = en_buf.f = temp_buff.f;		/* and initialize the "EN" list pointer */
+
+				/* substitute the expansion for the "EN" list */
+				free_blist(en_buf.f);
+
+				/* and initialize the "EN" list pointer */
+				en_ptr.p = en_buf.f = temp_buff.f;
 				en_buf.z = temp_buff.z;
 				en_ptr.dot = en_ptr.c = 0;
-				do_en_next();					/* get the first file */
+
+				/* get the first file */
+				do_en_next();
 			}
 		}
 	}
@@ -751,21 +868,22 @@ char func;
 set_var(arg)
 int *arg;			/* argument is pointer to variable */
 {
-	if (esp->flag1)		/* if an argument, then set the variable */
-	{
-		if (esp->flag2)					/* if two arguments, then <clr>, <set> */
+	/* if an argument, then set the variable */
+	if (esp->flag1) {
+		/* if two arguments, then <clr>, <set> */
+		if (esp->flag2)
 			*arg = (*arg & ~esp->val2) | esp->val1;
-		else *arg = esp->val1;			/* one arg is new value */
+		else
+			/* one arg is new value */
+			*arg = esp->val1;
+
 		esp->flag2 = esp->flag1 = 0;	/* consume argument */
-	}
-	else				/* otherwise fetch the variable's value */
-	{
+	} else {
+		/* otherwise fetch the variable's value */
 		esp->val1 = *arg;
 		esp->flag1 = 1;
 	}
 }
-
-
 
 /*
  * Read from selected input file stream into specified buffer
@@ -861,17 +979,22 @@ read_stream(file, ff_found, lbuff, nchars, endsw, crlf_sw, ff_sw)
 	/* and return "eof found" value */
 	return( (chr == EOF) ? -1 : 0);
 }
-/* routine to write text buffer out to selected output file	*/
-/* arguments are qp to start of text, number of characters,	*/
-/* and an "append FF" switch								*/
 
+/*
+ * routine to write text buffer out to selected output file
+ * arguments are qp to start of text, number of characters,
+ * and an "append FF" switch
+ */
 write_file(lbuff, nchars, ffsw)
-struct qp *lbuff;
-int nchars, ffsw;
+	struct qp *lbuff;
+	int nchars, ffsw;
 {
-	if (!outfile->fd && (nchars)) ERROR(E_NFO);
-	else write_stream(outfile->fd, lbuff, nchars, ez_val & EZ_CRLF);
-	if (outfile->fd && ffsw) putc(FF, outfile->fd);
+	if (!outfile->fd && (nchars))
+		ERROR(E_NFO);
+	else
+		write_stream(outfile->fd, lbuff, nchars, ez_val & EZ_CRLF);
+	if (outfile->fd && ffsw)
+		putc(FF, outfile->fd);
 }
 
 
@@ -913,133 +1036,239 @@ write_stream(file, lbuf, nchars, crlf_sw)
 	}
 }
 
-
-/* routine to kill output file: argument is pointer to an output file structure */
-
+/*
+ * Routine to kill output file: argument is pointer to an output file structure */
 kill_output(outptr)
-struct outfiledata *outptr;
+	struct outfiledata *outptr;
 {
-	if (outptr->fd)
-	{
+	if (outptr->fd) {
 		fclose(outptr->fd);
 		unlink(outptr->t_name);
 		outptr->fd = NULL;
 	}
 }
-/* "panic" routine called when "hangup" signal occurs */
-/* this routine saves the text buffer and closes the output files */
 
-char panic_name[] = "TECO_SAVED.tmp";			/* name of file created to save buffer */
+/*
+ * "panic" routine called when "hangup" signal occurs
+ * this routine saves the text buffer and closes the output files
+ */
+
+/* name of file created to save buffer */
+char panic_name[] = "TECO_SAVED.tmp";
 
 panic()
 {
-	if (!outfile->fd && z) outfile->fd = fopen(panic_name, "w");	/* if buffer nonempty and no file open, make one */
+	/* if buffer nonempty and no file open, make one */
+	if (!outfile->fd && z)
+		outfile->fd = fopen(panic_name, "w");
 
-	set_pointer(0, &aa);								/* set a pointer to start of text buffer */
-	if (outfile->fd && z) write_file(&aa, z, 0);		/* and write out buffer unless "open" failed */
+	/* set a pointer to start of text buffer */
+	set_pointer(0, &aa);
 
-	if (po_file.fd) fclose(po_file.fd), po_file.fd = NULL;		/* close any open output files */
-	if (so_file.fd) fclose(so_file.fd), so_file.fd = NULL;
+	/* and write out buffer unless "open" failed */
+	if (outfile->fd && z)
+		write_file(&aa, z, 0);
+
+	/* close any open output files */
+	if (po_file.fd) {
+		fclose(po_file.fd);
+		po_file.fd = NULL;
+	}
+
+	if (so_file.fd) {
+		fclose(so_file.fd);
+		so_file.fd = NULL;
+	}
 }
-/* do "F" commands */
 
+/* do "F" commands */
 do_f()
 {
 	struct buffcell *delete_p;
 
-	switch (mapch_l[getcmdc(trace_sw)])		 /* read next character and dispatch */
-	{
-	case '<':			/* back to beginning of current iteration */
-		if (cptr.flag & F_ITER)		/* if in iteration */
-		{
+	/* read next character and dispatch */
+	switch (mapch_l[getcmdc(trace_sw)]) {
+
+	/* back to beginning of current iteration */
+	case '<':
+		/* if in iteration */
+		if (cptr.flag & F_ITER) {
 			cptr.p = cptr.il->p;	/* restore */
 			cptr.c = cptr.il->c;
 			cptr.dot = cptr.il->dot;
 		}
-		else for (cptr.dot = cptr.c = 0; cptr.p->b->b != NULL; cptr.p = cptr.p->b);	/* else, restart current macro */
+
+		/* else, restart current macro */
+		else
+			for (cptr.dot = cptr.c = 0; cptr.p->b->b != NULL;
+					cptr.p = cptr.p->b)
+				;
 		break;
 
-	case '>':			/* to end of current iteration */
+	/* to end of current iteration */
+	case '>':
 		find_enditer();	/* find it */
-		if ( ( ((esp->flag1) ? esp->val1 : srch_result) >= 0) ? (~colonflag) : colonflag)	/* if exit */
-			pop_iteration(0);	/* and exit if appropriate */
+
+		/* if exit, exit appropriately */
+		if ( ( ((esp->flag1) ? esp->val1 : srch_result) >= 0) ?
+				(~colonflag) : colonflag)
+			pop_iteration(0);
 		break;
 
-	case '\'':					/* to end of conditional */
+	/* to end of conditional */
+	case '\'':
 	case '|':					/* to "else," or end */
 		find_endcond(cmdc);
 		break;
 
-		/* "F" search commands */
+	/* "F" search commands */
 
-	case 'b':						/* bounded search, alternative args */
+	/* bounded search, alternative args */
+	case 'b':
 		do_fb();
 		break;
 
-	case 'c':						/* bounded search, alternative args, then "FR" */
-		if (do_fb()) goto do_fr;
-		while (getcmdc(trace_sw) != term_char);		/* otherwise skip insert string */
+	/* bounded search, alternative args, then "FR" */
+	case 'c':
+		if (do_fb())
+			goto do_fr;
+
+		/* otherwise skip insert string */
+		while (getcmdc(trace_sw) != term_char)
+			;
 		break;
 
-	case 'n':						/* do "N" and then "FR" */
-		if (do_nsearch('n')) goto do_fr;
-		while (getcmdc(trace_sw) != term_char);		/* otherwise skip insert string */
+	/* do "N" and then "FR" */
+	case 'n':
+		if (do_nsearch('n'))
+			goto do_fr;
+
+		/* otherwise skip insert string */
+		while (getcmdc(trace_sw) != term_char)
+			;
 		break;
 
-	case '_':						/* do "_" and then "FR" */
-		if (do_nsearch('_')) goto do_fr;
-		while (getcmdc(trace_sw) != term_char);		/* otherwise skip insert string */
+	/* do "_" and then "FR" */
+	case '_':
+		if (do_nsearch('_'))
+			goto do_fr;
+
+		/* otherwise skip insert string */
+		while (getcmdc(trace_sw) != term_char)
+			;
 		break;
 
-	case 's':						/* search and replace: search, then do "FR" */
-		build_string(&sbuf);		/* read search string and terminator */
-		if (end_search(  do_search( setup_search() )  )) goto do_fr;	/* if search passed, do "FR" */
-		while (getcmdc(trace_sw) != term_char);		/* otherwise skip insert string */
+	/* search and replace: search, then do "FR" */
+	case 's':
+		/* read search string and terminator */
+		build_string(&sbuf);
+
+		/* if search passed, do "FR" */
+		if (end_search(  do_search( setup_search() )  ))
+			goto do_fr;
+
+		/* otherwise skip insert string */
+		while (getcmdc(trace_sw) != term_char)
+			;
 		break;
-		case 'r':						/* replace last insert, search, etc. */
-		if (esp->flag1) ERROR(E_NFR);	/* shouldn't have argument */
-		term_char = (atflag) ? getcmdc(trace_sw) : ESC;		/* set terminator */
+
+	/* replace last insert, search, etc. */
+	case 'r':
+		/* shouldn't have argument */
+		if (esp->flag1)
+			ERROR(E_NFR);
+
+		/* set terminator */
+		term_char = (atflag) ? getcmdc(trace_sw) : ESC;
 		atflag = 0;
-do_fr:					/* entry from FN, F_, and FC */
-		set_pointer(dot, &cc);		/* save a pointer to the current spot */
-		dot += ctrl_s;				/* back dot up over the string */
-		set_pointer(dot, &aa);		/* code from "insert1": convert dot to a qp */
-		delete_p = aa.p;			/* save beginning of original cell */
-		if (dot < buff_mod) buff_mod = dot;		/* update earliest char loc touched */
-		insert_p = bb.p = get_bcell();			/* get a new cell */
+
+do_fr:		/* entry from FN, F_, and FC */
+
+		/* save a pointer to the current spot */
+		set_pointer(dot, &cc);
+
+		/* back dot up over the string */
+		dot += ctrl_s;
+
+		/* code from "insert1": convert dot to a qp */
+		set_pointer(dot, &aa);
+
+		/* save beginning of original cell */
+		delete_p = aa.p;
+
+		/* update earliest char loc touched */
+		if (dot < buff_mod)
+			buff_mod = dot;
+
+		/* get a new cell */
+		insert_p = bb.p = get_bcell();
 		bb.c = 0;
-		ins_count = aa.c;		/* save char position of dot in cell */
+
+		/* save char position of dot in cell */
+		ins_count = aa.c;
 		aa.c = 0;
 
-		movenchars(&aa, &bb, ins_count);	/* copy cell up to dot */
-		moveuntil(&cptr, &bb, term_char, &ins_count, cptr.z-cptr.dot, trace_sw);	/* insert */
-		cptr.dot += ins_count;		/* advance command-string pointer */
-		getcmdc(trace_sw);			/* skip terminator */
+		/* copy cell up to dot */
+		movenchars(&aa, &bb, ins_count);
 
-		z += ctrl_s;				/* subtract delete length from buffer count */
-		delete_p->b->f = insert_p;	/* put the new cell where the old one was */
-		insert_p->b = delete_p->b;	/* code borrowed from "insert2" */
+		/* insert */
+		moveuntil(&cptr, &bb, term_char, &ins_count,
+			cptr.z-cptr.dot, trace_sw);
+
+		/* advance command-string pointer */
+		cptr.dot += ins_count;
+
+		/* skip terminator */
+		getcmdc(trace_sw);
+
+		/* subtract delete length from buffer count */
+		z += ctrl_s;
+
+		/* put the new cell where the old one was */
+		delete_p->b->f = insert_p;
+
+		/* code borrowed from "insert2" */
+		insert_p->b = delete_p->b;
 		insert_p = NULL;
 
-		if (bb.c == cc.c)			/* if replacement text was same length, we can save time */
-		{
-			for (; bb.c < CELLSIZE; bb.c++) bb.p->ch[bb.c] = cc.p->ch[bb.c];	/* copy rest of cell */
-			bb.p->f = cc.p->f;		/* replace orig cell's place in chain with end of new list */
-			if (bb.p->f) bb.p->f->b = bb.p;
-			cc.p->f = NULL;			/* terminate the part snipped out */
+		/* if replacement text was same length, we can save time */
+		if (bb.c == cc.c) {
+			/* copy rest of cell */
+			for (; bb.c < CELLSIZE; bb.c++)
+				bb.p->ch[bb.c] = cc.p->ch[bb.c];
+
+			/*
+			 * Replace orig cell's place in chain with
+			 * end of new list
+			 */
+			bb.p->f = cc.p->f;
+			if (bb.p->f)
+				bb.p->f->b = bb.p;
+
+			/* terminate the part snipped out */
+			cc.p->f = NULL;
 			free_blist(delete_p);	/* return the old part */
-		}
+		} else {
+			/*
+			 * Different positions: shift the remainder
+			 * of the buffer
+			 */
 
-		else						/* different positions: shift the remainder of the buffer */
-		{
-			bb.p->f = delete_p;		/* splice rest of buffer to end */
+			/* splice rest of buffer to end */
+			bb.p->f = delete_p;
 			delete_p->b = bb.p;
-			movenchars(&cc, &bb, z-dot);	/* squeeze buffer */
-			free_blist(bb.p->f);		/* return unused cells */
-			bb.p->f = NULL;				/* and end the buffer */
+
+
+			/*
+			 * Squeeze buffer, return unused cells, end buffer
+			 */
+			movenchars(&cc, &bb, z-dot);
+			free_blist(bb.p->f);
+			bb.p->f = NULL;
 		}
 
-		z += ins_count;				/* add # of chars inserted */
+		/* add # of chars inserted */
+		z += ins_count;
 		dot += ins_count;
 		ctrl_s = -ins_count;		/* save string length */
 		esp->flag1 = esp->flag2 = 0;	/* and consume arguments */
@@ -1050,23 +1279,27 @@ do_fr:					/* entry from FN, F_, and FC */
 		ERROR(E_IFC);
 	}
 }
-/* routines for macro iteration */
-/* pop iteration: if arg nonzero, exit unconditionally */
-/* else check exit conditions and exit or reiterate */
 
+/*
+ * routines for macro iteration
+ * pop iteration: if arg nonzero, exit unconditionally
+ * else check exit conditions and exit or reiterate
+ */
 pop_iteration(arg)
-int arg;
+	int arg;
 {
-	if (!arg && (!cptr.il->dflag || (--(cptr.il->count) > 0)) )		/* if reiteration */
-	{
+	/* if reiteration */
+	if (!arg && (!cptr.il->dflag || (--(cptr.il->count) > 0)) ) {
 		cptr.p = cptr.il->p;		/* restore */
 		cptr.c = cptr.il->c;
 		cptr.dot = cptr.il->dot;
-	}
-	else
-	{
-		if (cptr.il->b) cptr.il = cptr.il->b;	/* if not last thing on stack, back up */
-		else cptr.flag &= ~F_ITER;				/* else clear "iteration" flag */
+	} else {
+		/* if not last thing on stack, back up */
+		if (cptr.il->b)
+			cptr.il = cptr.il->b;
+		else
+			/* else clear "iteration" flag */
+			cptr.flag &= ~F_ITER;
 	}
 }
 
@@ -1077,28 +1310,35 @@ find_enditer()
 {
 	register int icnt;
 
-	for (icnt = 1; icnt > 0;)		/* scan for matching > */
-	{
-		while ((skipto(0) != '<') && (skipc != '>'));	/* scan for next < or > */
-		if (skipc == '<') ++icnt;		/* and keep track of macro level */
-		else --icnt;
+	/* scan for matching > */
+	for (icnt = 1; icnt > 0;) {
+		/* scan for next < or > */
+		while ((skipto(0) != '<') && (skipc != '>'))
+			;
+
+		/* and keep track of macro level */
+		if (skipc == '<')
+			++icnt;
+		else
+			--icnt;
 	}
 }
 
-
-
 /* find end of conditional */
-char find_endcond(arg)
-char arg;
+char
+find_endcond(arg)
+	char arg;
 {
 	register int icnt;
 
-	for (icnt = 1; icnt > 0;)
-	{
-		while ((skipto(0) != '"') && (skipc != '\'') && (skipc != '|'));
-		if (skipc == '"') ++icnt;
-		else if (skipc == '\'') -- icnt;
-		else if ((icnt == 1) && (arg == '|')) break;
+	for (icnt = 1; icnt > 0;) {
+		while ((skipto(0) != '"') && (skipc != '\'') && (skipc != '|'))
+			;
+		if (skipc == '"')
+			++icnt;
+		else if (skipc == '\'')
+			--icnt;
+		else if ((icnt == 1) && (arg == '|'))
+			break;
 	}
 }
-
