@@ -783,7 +783,7 @@ exec_cmds1()
 			ll = esp->val1 = 0;
 
 			/* count digits; don't read beyond buffer */
-			for (ctrl_s = 0; dot <= z; dot++, ctrl_s--) {
+			for (ctrl_s = 0; dot < z; dot++, ctrl_s--) {
 				set_pointer(dot, &aa);	/* point to dot */
 				if ((aa.p->ch[aa.c] == '+') ||
 						(aa.p->ch[aa.c] == '-')) {
