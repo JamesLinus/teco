@@ -625,10 +625,11 @@ srch_cmp()
 			case 'd':
 				return(isdigit(sb.p->ch[sb.c]));
 
-			/* line terminator LF, VT, FF */
+			/* line terminator LF, VT, FF, CR */
 			case 'l':
 				return((sb.p->ch[sb.c] == LF) ||
 					(sb.p->ch[sb.c] == FF) ||
+					(sb.p->ch[sb.c] == CR) ||
 					(sb.p->ch[sb.c] == VT));
 
 			/* alphanumeric */
