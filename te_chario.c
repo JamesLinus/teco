@@ -115,7 +115,7 @@ int arg;
  */
 gettty_nowait()
 {
-	int c;
+	int c, err;
 
 again:
 	if (lf_sw) {
@@ -137,13 +137,15 @@ again:
 	/* read character, or -1, skip nulls */
 	while ((c = getchar()) == '\0')
 		;
-
-	/* If interrupted, try again */
-	if ((c == -1) && (errno == EINTR))
-		goto again;
+	err = errno;
 
 	/* reset to normal mode */
 	tty_new.c_cc[VMIN] = 1;
+	ioctl(fileno(stdin), TCSETPW, &tty_new);
+
+	/* If interrupted, try again */
+	if ((c == -1) && (err == EINTR))
+		goto again;
 
 	/* CR: set switch to make up a LF */
 	if (c == CR)
@@ -177,6 +179,7 @@ again:
 	++in_read;			/* set "read busy" switch */
 
 	/* get character; skip nulls */
+	rewind(stdin);
 	while(!(c = getchar()))
 		;
 
