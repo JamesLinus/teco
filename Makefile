@@ -4,7 +4,7 @@ OBJS= te_chario.o te_data.o te_exec0.o te_exec1.o \
 CFLAGS= -O
 
 te: $(OBJS)
-	$(CC) $(CFLAGS) -o te $(OBJS) -lcurses -lmalloc
+	$(CC) $(CFLAGS) -o te $(OBJS) -lcurses
 
 clean:
 	rm -f core *.o tags
