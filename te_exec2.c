@@ -22,7 +22,7 @@ FILE *eisw;									/* indirect command file pointer */
 
 do_e()
 {
-	char c;							/* temps */
+	int c;							/* temps */
 	int old_var;
 	FILE *t_eisw;
 
@@ -370,108 +370,160 @@ int do_eq()
 /* receives its std input from chars m through n of teco's buffer.	*/
 /* Output from the command is placed in Q#.							*/
 
-int do_eq1(shell)
+do_eq1(shell)
 char *shell;			/* arg is pointer to shell name */
 {
-	int ff, pipe_in[2], pipe_out[2];	/* fork result and two pipes */
-	FILE *xx_in, *xx_out;				/* std in and out for called process */
+	int ff, pipe_in[2],
+		pipe_out[2];		/* fork result and two pipes */
+	FILE *xx_in, *xx_out;		/* std in and out for called process */
 	FILE *fdopen();
 	int status;
 
-	ll = line_args(1, &aa);		/* set aa to start of text, ll to number of chars */
-	dot += ll;					/* set pointer at end of text */
-	ctrl_s = -ll;				/* set ^S to - # of chars */
+	/* set aa to start of text, ll to number of chars */
+	ll = line_args(1, &aa);
 
-	if (pipe(pipe_out)) ERROR(E_SYS);	/* make input pipe; failure if can't */
+	/* set pointer at end of text */
+	dot += ll;
 
-	if (win_data[7]) window(WIN_SUSP);	/* disable split screen */
-	setup_tty(TTY_SUSP);				/* put console back to original state */
-	if ((ff = fork()) == -1)			/* fork first child: if error, quit */
-	{
+	/* set ^S to - # of chars */
+	ctrl_s = -ll;
+
+	/* make input pipe; failure if can't */
+	if (pipe(pipe_out))
+		ERROR(E_SYS);
+
+	/* disable split screen */
+	if (win_data[7])
+		window(WIN_SUSP);
+
+	/* put console back to original state */
+	setup_tty(TTY_SUSP);
+
+	/* fork first child: if error, quit */
+	if ((ff = fork()) == -1) {
 		close(pipe_out[0]);
 		close(pipe_out[1]);
 		setup_tty(TTY_RESUME);
-		if (win_data[7]) window(WIN_RESUME), window(WIN_REDRAW);
+		if (win_data[7]) {
+			window(WIN_RESUME);
+			window(WIN_REDRAW);
+		}
 		ERROR(E_SYS);
 	}
 
-	if (ff)							/* if this is the parent, the task is to read into q# */
-	{
-		make_buffer(&timbuf);		/* initialize the q# header */
-		bb.p = timbuf.f;			/* init bb to point to q# */
-		timbuf.z = 	bb.c = 0;
+	/* if this is the parent, the task is to read into q# */
+	if (ff) {
+		make_buffer(&timbuf);	/* initialize the q# header */
+		bb.p = timbuf.f;	/* init bb to point to q# */
+		timbuf.z = bb.c = 0;
 
-		close(pipe_out[1]);			/* parent won't write to this pipe */
+		/* parent won't write to this pipe */
+		close(pipe_out[1]);
 
-		if ((xx_out = fdopen(pipe_out[0], "r")) == 0)	/* open the "std out" pipe for reading */
-		{
-			close(pipe_out[0]);		/* if can't open output pipe */
+		/* open the "std out" pipe for reading */
+		if ((xx_out = fdopen(pipe_out[0], "r")) == 0) {
+			close(pipe_out[0]);	/* if can't open output pipe */
 			setup_tty(TTY_RESUME);
-			if (win_data[7]) window(WIN_RESUME), window(WIN_REDRAW);
-			ERROR(E_SYS);			/* "open" failure */
+			if (win_data[7]) {
+				window(WIN_RESUME);
+				window(WIN_REDRAW);
+			}
+			ERROR(E_SYS);		/* "open" failure */
 		}
-		read_stream(xx_out, 0, &bb, &timbuf.z, 0, 0, 1);		/* read from pipe to q# */
+
+		/* read from pipe to q# */
+		read_stream(xx_out, 0, &bb, &timbuf.z, 0, 0, 1);
 		close(pipe_out[0]);
 
-		while (wait(&status) != ff);		/* wait for children to finish */
+		/* wait for children to finish */
+		while (wait(&status) != ff)
+			;
 		setup_tty(TTY_RESUME);
-		if (win_data[7]) window(WIN_RESUME), window(WIN_REDRAW);
+		if (win_data[7]) {
+			window(WIN_RESUME);
+			window(WIN_REDRAW);
+		}
 		return((status & 0xFF) ? -1 : 0);
 	}
-	/* This is the child.  It in turn forks into two processes, of which the "parent"	*/
-	/* (original child) writes the specified part of the buffer to the pipe, and the	*/
-	/* new child (grandchild to the original teco) execl's the Unix command.			*/
 
-	else							/* this is the child */
-	{
-		close(pipe_out[0]);				/* won't read from "output" pipe */
-		if (pipe(pipe_in)) exit(1);		/* make the "std in" pipe for the process, quit if can't */
+	/*
+	 * This is the child.  It in turn forks into two processes, of which
+	 * the "parent" (original child) writes the specified part of the
+	 * buffer to the pipe, and the new child (grandchild to the original
+	 * teco) execl's the Unix command.
+	 */
 
-		if ((ff = fork()) == -1) exit(1);	/* fork to two processes (total 3), exit if error */
+	else {
+		/* won't read from "output" pipe */
+		close(pipe_out[0]);
 
-		if (ff)							/* parent - will send chars */
-		{
-			close(pipe_in[0]);			/* won't read from this pipe */
+		/* make the "std in" pipe for the process, quit if can't */
+		if (pipe(pipe_in))
+			exit(1);
+
+		/* fork to two processes (total 3), exit if error */
+		if ((ff = fork()) == -1)
+			exit(1);
+
+		/* parent - will send chars */
+		if (ff) {
+			close(pipe_in[0]);	/* won't read from this pipe */
 
 			/* open pipe for writing; exit if open fails */
 
-			if ((xx_in = fdopen(pipe_in[1], "w")) == 0) exit(1);
+			if ((xx_in = fdopen(pipe_in[1], "w")) == 0)
+				exit(1);
 
-			write_stream(xx_in, &aa, ll, 0);		/* write to stream, CRLF becomes LF */
+			/* write to stream, CRLF becomes LF */
+			write_stream(xx_in, &aa, ll, 0);
 			fclose(xx_in);
 
-			while (wait(&status) != ff);	/* wait for child */
-			exit(status & 0xFF);			/* exit with child's status */
-		}
+			/* wait for child */
+			while (wait(&status) != ff)
+				;
 
-		else							/* this process is the grandchild */
-		{
-			close(pipe_in[1]);			/* close "input" for writing */
-			dup2(pipe_in[0], fileno(stdin));		/* substitute pipe_in for stdin */
-			dup2(pipe_out[1], fileno(stdout));		/* and pipe_out for stdout	*/
-			close(pipe_in[0]);			/* close original descriptors */
+			/* exit with child's status */
+			exit(status & 0xFF);
+		} else {
+			/* this process is the grandchild */
+
+			/* close "input" for writing */
+			close(pipe_in[1]);
+
+			/* substitute pipe_in for stdin */
+			dup2(pipe_in[0], fileno(stdin));
+
+			/* and pipe_out for stdout	*/
+			dup2(pipe_out[1], fileno(stdout));
+
+			/* close original descriptors */
+			close(pipe_in[0]);
 			close(pipe_out[1]);
 
-			execl(shell, shell, "-c", &sysbuf.f->ch[0], 0);		/* execute specified routine */
+			/* execute specified routine */
+			execl(shell, shell, "-c", &sysbuf.f->ch[0], 0);
 			fputs("execl failed\n", stderr);
 			exit(1);
 		}
+		/*NOTREACHED*/
 	}
 }
-/* Routines to handle EN wild-card file specification	*/
-/* ENfilespec$ defines file class, leaving 'filespec'	*/
-/* in filespec buffer and reading expanded list of		*/
-/* files into local buffer.  EN$ gets next filespec		*/
-/* into filespec buffer.								*/
 
-struct qh en_buf;				/* header for storage for file list */
-struct qp en_ptr;				/* pointer to load/read file list	*/
-static char glob_cmd0[] = { 
-	'g', 'l', 'o', 'b', ' ' } 
-;
+/*
+ * Routines to handle EN wild-card file specification
+ * ENfilespec$ defines file class, leaving 'filespec'
+ * in filespec buffer and reading expanded list of
+ * files into local buffer.  EN$ gets next filespec
+ * into filespec buffer.
+ */
 
-int do_en()
-{
+struct qh en_buf;		/* header for storage for file list */
+struct qp en_ptr;		/* pointer to load/read file list */
+static char glob_cmd0[] = {
+	'g', 'l', 'o', 'b', ' '
+};
+
+do_en(){
 	int t;
 
 	if (build_string(&fbuf))					/* if a file string is specified */
@@ -490,70 +542,107 @@ int do_en()
 	}
 	return (t);
 }
-
-/* routine to expand the string in the filespec buffer */
-/* argument is the address of a qh that gets the expanded string */
-/* argument->v gets set to the number of file specs found */
 
-int do_glob(buff)
-struct qh *buff;
+/*
+ * Routine to expand the string in the filespec buffer
+ * argument is the address of a qh that gets the expanded string
+ * argument->v gets set to the number of file specs found
+ */
+do_glob(lbuff)
+	struct qh *lbuff;
 {
-	char glob_cmd[CELLSIZE+5];			/* "glob filespec" command string */
+	char glob_cmd[CELLSIZE+5];	/* "glob filespec" command string */
 	int t;
-	char c;
-	int glob_pipe[2];					/* pipe to forked shell for expanding filenames */
-	struct qp glob_ptr;					/* pointer for loading result buffer */
-	FILE *xx_out;						/* stream for reading chars from pipe */
+	int c;
+	int glob_pipe[2];		/* pipe to shell for filenames */
+	struct qp glob_ptr;		/* pointer for result buffer */
+	FILE *xx_out;			/* stream for chars from pipe */
 	FILE *fdopen();
 	int status;
 
-	make_buffer(buff);					/* initialize expanded file buffer */
-	glob_ptr.p = buff->f;				/* initialize pointer to buffer */
-	glob_ptr.c = glob_ptr.dot = buff->z = buff->v = 0;
-	for (t = 0; t < 5; t++) glob_cmd[t] = glob_cmd0[t];		/* set up "glob filespec" command */
-	for (t = 0; t < fbuf.z +1; t++) glob_cmd[t+5] = fbuf.f->ch[t];
+	/* initialize expanded file buffer */
+	make_buffer(lbuff);
 
-	if (pipe(glob_pipe)) ERROR(E_SYS);		/* make a pipe */
-	setup_tty(TTY_SUSP);					/* put console back to normal */
-	if ((t = fork()) == -1)					/* spawn a child... if failure */
-	{
-		close(glob_pipe[0]);				/* undo the pipe */
+	/* initialize pointer to buffer */
+	glob_ptr.p = lbuff->f;
+	glob_ptr.c = glob_ptr.dot = lbuff->z = lbuff->v = 0;
+
+	/* set up "glob filespec" command */
+	for (t = 0; t < 5; t++)
+		glob_cmd[t] = glob_cmd0[t];
+	for (t = 0; t < fbuf.z +1; t++)
+		glob_cmd[t+5] = fbuf.f->ch[t];
+
+	/* make a pipe */
+	if (pipe(glob_pipe))
+		ERROR(E_SYS);
+
+	/* put console back to normal */
+	setup_tty(TTY_SUSP);
+
+	/* spawn a child... if failure */
+	if ((t = fork()) == -1) {
+		close(glob_pipe[0]);		/* undo the pipe */
 		close(glob_pipe[1]);
 		setup_tty(TTY_RESUME);
-		ERROR(E_SYS);						/* and exit with failure */
+		ERROR(E_SYS);			/* and exit with failure */
 	}
 
-	if (t)									/* if this is the parent */
-	{
-		close(glob_pipe[1]);				/* parent won't write */
-		if ((xx_out = fdopen(glob_pipe[0], "r")) == 0)	/* open pipe for read */
-		{
-			close(glob_pipe[0]);						/* failure to open */
+	/* if this is the parent */
+	if (t) {
+		close(glob_pipe[1]);		/* parent won't write */
+
+		/* open pipe for read */
+		if ((xx_out = fdopen(glob_pipe[0], "r")) == 0) {
+
+			/* failure to open */
+			close(glob_pipe[0]);
 			setup_tty(TTY_RESUME);
 			ERROR(E_SYS);
 		}
 
-		while ((c = getc(xx_out)) != EOF)		/* read characters from pipe */
-		{
-			if (c == '\0') ++buff->v;			/* count null chars that separate file specs */
-			glob_ptr.p->ch[glob_ptr.c] = c;		/* store them in buffer */
+		/* read characters from pipe */
+		while ((c = getc(xx_out)) != EOF) {
+
+			/* count null chars that separate file specs */
+			if (c == '\0')
+				++lbuff->v;
+
+			/* store them in buffer */
+			glob_ptr.p->ch[glob_ptr.c] = c;
 			fwdcx(&glob_ptr);
 		}
 
-		fclose(xx_out);							/* through with stream */
-		buff->z = glob_ptr.dot;					/* save character count */
-		while (wait(&status) != t);				/* wait for child to finish */
+		/* through with stream */
+		fclose(xx_out);
+
+		/* save character count */
+		lbuff->z = glob_ptr.dot;
+
+		/* wait for child to finish */
+		while (wait(&status) != t)
+			;
 		setup_tty(TTY_RESUME);
-		return((status & 0xFF) ? 0 : -1);		/* return success unless child exited nonzero */
-	}
-		else										/* this is the child */
-	{
-		close(glob_pipe[0]);					/* child won't read */
-		dup2(glob_pipe[1], fileno(stdout));		/* substitute pipe for standard out */
-		close(glob_pipe[1]);					/* don't need that anymore */
-		execl("/bin/csh", "csh", "-fc", glob_cmd, 0);		/* execute the "glob" */
+
+		/* return success unless child exited nonzero */
+		return((status & 0xFF) ? 0 : -1);
+	} else {
+		/* this is the child */
+
+		/* child won't read */
+		close(glob_pipe[0]);
+
+		/* substitute pipe for standard out */
+		dup2(glob_pipe[1], fileno(stdout));
+
+		/* don't need that anymore */
+		close(glob_pipe[1]);
+
+		/* execute the "glob" */
+		execl("/bin/csh", "csh", "-fc", glob_cmd, 0);
 		fputs("execl failed\n", stderr);
 		exit(1);
+		/*NOTREACHED*/
 	}
 }
 
@@ -678,49 +767,62 @@ int *arg;			/* argument is pointer to variable */
 
 
 
-/* read from selected input file stream into specified buffer	*/
-/* terminate on end-of-file or form feed						*/
-/* if endsw > 0 terminates after that many lines				*/
-/* if endsw < 0 stops if z > BUFF_LIMIT							*/
-/* returns -1 if read EOF, 0 otherwise							*/
-
-int read_file(buff, nchars, endsw)
-struct qp *buff;
-int *nchars, endsw;
+/*
+ * Read from selected input file stream into specified buffer
+ * terminate on end-of-file or form feed
+ * if endsw > 0 terminates after that many lines
+ * if endsw < 0 stops if z > BUFF_LIMIT
+ * returns -1 if read EOF, 0 otherwise
+ */
+read_file(lbuff, nchars, endsw)
+	struct qp *lbuff;
+	int *nchars, endsw;
 {
-	if (!infile->fd) infile->eofsw = -1, ctrl_e = 0;	/* return if no input file open */
-	else infile->eofsw = read_stream(infile->fd, &ctrl_e, buff, nchars, endsw, ez_val & EZ_CRLF, ez_val & EZ_READFF);
+	/* return if no input file open */
+	if (!infile->fd) {
+		infile->eofsw = -1, ctrl_e = 0;
+	} else {
+		infile->eofsw = read_stream(infile->fd, &ctrl_e, lbuff,
+			nchars, endsw, ez_val & EZ_CRLF,
+			ez_val & EZ_READFF);
+	}
 	return(esp->val1 = infile->eofsw);
 }
-/* read from an I/O stream into specified buffer							*/
-/* this is used by read_file and by "eq" pipe from other Unix processes		*/
-/* args buff, nchars, endsw as above; file is stream pointer, ff_found is	*/
-/* address of a switch to set if read ended with a FF, crlf_sw is lf->crlf	*/
-/* conversion, ff_sw indicates whether to stop on a form feed.				*/
 
-int read_stream(file, ff_found, buff, nchars, endsw, crlf_sw, ff_sw)
-FILE *file;
-struct qp *buff;
-int *ff_found, *nchars, endsw, crlf_sw, ff_sw;
+/*
+ * Read from an I/O stream into specified buffer
+ * this is used by read_file and by "eq" pipe from other Unix processes
+ * args buff, nchars, endsw as above; file is stream pointer, ff_found is
+ * address of a switch to set if read ended with a FF, crlf_sw is lf->crlf
+ * conversion, ff_sw indicates whether to stop on a form feed.
+ */
+read_stream(file, ff_found, lbuff, nchars, endsw, crlf_sw, ff_sw)
+	FILE *file;
+	struct qp *lbuff;
+	int *ff_found, *nchars, endsw, crlf_sw, ff_sw;
 {
-	char chr;
+	int chr;
 	int crflag;
 	register struct buffcell *p;
 	register int c;
 
-	p = (*buff).p;		/* copy pointer locally */
-	c = (*buff).c;
-	crflag = 0;			/* "last char wasn't CR" */
-	while (((chr = getc(file)) != EOF) && ((chr != FF) || ff_sw))
-	{
-		if ((chr == LF) && !crflag && !crlf_sw)		/* automatic cr before lf */
-		{
+	/* copy pointer locally */
+	p = (*lbuff).p;
+	c = (*lbuff).c;
+
+	/* "last char wasn't CR" */
+	crflag = 0;
+	while (((chr = getc(file)) != EOF) && ((chr != FF) || ff_sw)) {
+
+		/* automatic cr before lf */
+		if ((chr == LF) && !crflag && !crlf_sw) {
 			p->ch[c] = CR;		/* store a cr */
 			++(*nchars);		/* increment buffer count */
-			if (++c > CELLSIZE-1)	/* next cell? */
-			{
-				if (!p->f)			/* need a new cell? */
-				{
+
+			/* next cell? */
+			if (++c > CELLSIZE-1) {
+				/* need a new cell? */
+				if (!p->f) {
 					p->f = get_bcell();
 					p->f->b = p;
 				}
@@ -730,10 +832,12 @@ int *ff_found, *nchars, endsw, crlf_sw, ff_sw;
 		}
 		p->ch[c] = chr;			/* store char */
 		++(*nchars);			/* increment character count */
-		if (++c > CELLSIZE-1)	/* next cell? */
-		{
-			if (!p->f)			/* need a new cell? */
-			{
+
+		/* next cell? */
+		if (++c > CELLSIZE-1) {
+
+			/* need a new cell? */
+			if (!p->f) {
 				p->f = get_bcell();
 				p->f->b = p;
 			}
@@ -741,55 +845,70 @@ int *ff_found, *nchars, endsw, crlf_sw, ff_sw;
 			c = 0;
 		}
 		crflag = (chr == CR);	/* flag set if last char was CR */
-		if ((chr == LF) && ((endsw < 0 && z > BUFF_LIMIT) || (endsw > 0 && --endsw == 0))) break;	/* term after N lines */
+
+		/* term after N lines */
+		if ((chr == LF) && ((endsw < 0 && z > BUFF_LIMIT) ||
+				(endsw > 0 && --endsw == 0)))
+			break;
 	}
-	(*buff).p = p;			/* update pointer */
-	(*buff).c = c;
-	if (ff_found) *ff_found = (chr == FF) ? -1 : 0;		/* set flag to indicate whether FF found */
-	return( (chr == EOF) ? -1 : 0);					/* and return "eof found" value */
+	(*lbuff).p = p;			/* update pointer */
+	(*lbuff).c = c;
+
+	/* set flag to indicate whether FF found */
+	if (ff_found)
+		*ff_found = (chr == FF) ? -1 : 0;
+
+	/* and return "eof found" value */
+	return( (chr == EOF) ? -1 : 0);
 }
 /* routine to write text buffer out to selected output file	*/
 /* arguments are qp to start of text, number of characters,	*/
 /* and an "append FF" switch								*/
 
-write_file(buff, nchars, ffsw)
-struct qp *buff;
+write_file(lbuff, nchars, ffsw)
+struct qp *lbuff;
 int nchars, ffsw;
 {
 	if (!outfile->fd && (nchars)) ERROR(E_NFO);
-	else write_stream(outfile->fd, buff, nchars, ez_val & EZ_CRLF);
+	else write_stream(outfile->fd, lbuff, nchars, ez_val & EZ_CRLF);
 	if (outfile->fd && ffsw) putc(FF, outfile->fd);
 }
 
 
-/* routine to write text buffer to I/O stream.  Used by	*/
-/* write_file, above, and by "eq" write to pipe to other	*/
-/* Unix processes.  Arguments buff, nchars as above; file	*/
-/* is stream pointer, crlf_sw zero converts CRLF to LF		*/
-
-write_stream(file, buff, nchars, crlf_sw)
-FILE *file;
-struct qp *buff;
-int nchars, crlf_sw;
+/*
+ * routine to write text buffer to I/O stream.  Used by
+ * write_file, above, and by "eq" write to pipe to other
+ * Unix processes.  Arguments buff, nchars as above; file
+ * is stream pointer, crlf_sw zero converts CRLF to LF
+ */
+write_stream(file, lbuf, nchars, crlf_sw)
+	FILE *file;
+	struct qp *lbuf;
+	int nchars, crlf_sw;
 {
 	char c;
 	int crflag;
 
 	crflag = 0;
-	for (; nchars > 0; nchars--)
-	{
-		if ((c = (*buff).p->ch[(*buff).c]) == CR) crflag = 1;	/* set flag if a c.r. */
-		else
-		{
-			if ((crflag) && ((c != LF) || crlf_sw))			/* if c.r. not before lf, or if not in */
-				putc(CR, file);								/* "no cr" mode, output the c.r. */
+	for (; nchars > 0; nchars--) {
+
+		/* set flag if a c.r. */
+		if ((c = (*lbuf).p->ch[(*lbuf).c]) == CR) {
+			crflag = 1;
+		} else {
+			/*
+			 * If c.r. not before lf, or if not in
+			 * "no cr" mode, output the c.r.
+			 */
+			if ((crflag) && ((c != LF) || crlf_sw)) {
+				putc(CR, file);
+			}
 			crflag = 0;
 			putc(c, file);
 		}
-		if (++(*buff).c > CELLSIZE-1)
-		{
-			(*buff).p = (*buff).p->f;
-			(*buff).c = 0;
+		if (++(*lbuf).c > CELLSIZE-1) {
+			(*lbuf).p = (*lbuf).p->f;
+			(*lbuf).c = 0;
 		}
 	}
 }
