@@ -115,7 +115,8 @@ int arg;
  */
 gettty_nowait()
 {
-	int c, err;
+	char c;
+	int err, cnt;
 
 again:
 	if (lf_sw) {
@@ -130,13 +131,18 @@ again:
 		return(c);
 	}
 
+	/* Clear EOF if set */
+	if (feof(stdin))
+		clearerr(stdin);
+
 	/* set to "no delay" mode */
 	tty_new.c_cc[VMIN] = 0;
 	ioctl(fileno(stdin), TCSETPW, &tty_new);
 
 	/* read character, or -1, skip nulls */
-	while ((c = getchar()) == '\0')
-		;
+	do {
+		cnt = read(fileno(stdin), &c, sizeof(c));
+	} while ((cnt > 0) && (c == '\0'));
 	err = errno;
 
 	/* reset to normal mode */
@@ -144,8 +150,12 @@ again:
 	ioctl(fileno(stdin), TCSETPW, &tty_new);
 
 	/* If interrupted, try again */
-	if ((c == -1) && (err == EINTR))
+	if ((cnt < 0) && (err == EINTR))
 		goto again;
+
+	/* No data--return -1 */
+	if (cnt == 0)
+		return(-1);
 
 	/* CR: set switch to make up a LF */
 	if (c == CR)
@@ -179,7 +189,6 @@ again:
 	++in_read;			/* set "read busy" switch */
 
 	/* get character; skip nulls */
-	rewind(stdin);
 	while(!(c = getchar()))
 		;
 
