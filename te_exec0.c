@@ -1,6 +1,6 @@
-/* TECO for Ultrix   Copyright 1986 Matt Fichtenbaum						*/
-/* This program and its components belong to GenRad Inc, Concord MA 01742	*/
-/* They may be copied if this copyright notice is included					*/
+/* TECO for Ultrix   Copyright 1986 Matt Fichtenbaum */
+/* This program and its components belong to GenRad Inc, Concord MA 01742 */
+/* They may be copied if this copyright notice is included */
 
 /* te_exec0.c   execute command string   11/31/86 */
 #include "te_defs.h"
@@ -13,93 +13,109 @@ exec_cmdstr()
 	char *timestring, *asctime();
 	time_t t;
 
-	exitflag = 0;					/* set flag to "executing" */
-	cmdstr.p = cbuf.f;				/* cmdstr to start of command string */
+	exitflag = 0;		/* set flag to "executing" */
+	cmdstr.p = cbuf.f;	/* cmdstr to start of command string */
 	cmdstr.z = cbuf.z;
-	cmdstr.flag = cmdstr.dot = cmdstr.c = 0;	/* clear char ptr and iteration flag */
-	msp = &cmdstr;					/* initialize macro stack pointer */
-	esp = &estack[0];				/* initialize expression stack pointer */
-	qsp = &qstack[-1];				/* initialize q-reg stack pointer */
-	atflag = colonflag = 0;			/* clear flags */
-	esp->flag2 = esp->flag1 = 0;	/* initialize expression reader */
+	cmdstr.flag = cmdstr.dot
+		= cmdstr.c = 0;	/* clear char ptr and iteration flag */
+	msp = &cmdstr;		/* initialize macro stack pointer */
+	esp = &estack[0];	/* initialize expression stack pointer */
+	qsp = &qstack[-1];	/* initialize q-reg stack pointer */
+	atflag = colonflag = 0;	/* clear flags */
+	esp->flag2 =
+		esp->flag1 = 0;	/* initialize expression reader */
 	esp->op = OP_START;
-	trace_sw = 0;					/* start out with trace off */
-	digit_sw = 0;					/* and no digits read */
+	trace_sw = 0;		/* start out with trace off */
+	digit_sw = 0;		/* and no digits read */
 
-	while (!exitflag)				/* until end of command string */
-	{
-		if (getcmdc0(trace_sw) == '^')		/* interpret next char as corresp. control char */
+	/* until end of command string */
+	while (!exitflag) {
+		/* interpret next char as corresp. control char */
+		if (getcmdc0(trace_sw) == '^')
 			cmdc = getcmdc(trace_sw) & 0x1f;
 
-		if (isdigit(cmdc))		/* process number */
-		{					/* this works lousy for hex but so does TECO-11 */
-			if (cmdc - '0' >= ctrl_r) ERROR(E_ILN);				/* invalid digit */
-			if (!(digit_sw++)) esp->val1 = cmdc - '0';			/* first digit */
-			else esp->val1 = esp->val1 * ctrl_r + cmdc - '0';	/* other digits */
+		/* process number */
+		/* this works lousy for hex but so does TECO-11 */
+		if (isdigit(cmdc)) {
+			/* invalid digit */
+			if (cmdc - '0' >= ctrl_r)
+				ERROR(E_ILN);
+
+			/* first digit */
+			if (!(digit_sw++))
+				esp->val1 = cmdc - '0';
+			else
+				/* other digits */
+				esp->val1 = esp->val1 * ctrl_r + cmdc - '0';
 			esp->flag1++;		/* indicate a value read in */
 		}
 
 		/* not a digit: dispatch on character */
 
-		else
-		{
+		else {
 			digit_sw = 0;
 			switch (mapch_l[cmdc])
 			{
 
-				/* characters ignored */
-
+			/* characters ignored */
 			case CR:
 			case LF:
 			case VT:
 			case FF:
 			case ' ':
 				break;
-				/* ESC: one absorbs argument, two terminate current level */
 
+			/*
+			 * ESC: one absorbs argument,
+			 * two terminate current level
+			 */
 			case ESC:
-				if (peekcmdc(ESC))	/* if next char is an ESC */
-				{
-					if (msp <= &mstack[0]) exitflag = 1;	/* pop stack; if empty, terminate */
-					else --msp;
-				}
-				else
-				{
-					esp->flag1 = 0;		/* else consume argument */
+				/* if next char is an ESC */
+				if (peekcmdc(ESC)) {
+					/* pop stack; if empty, terminate */
+					if (msp <= &mstack[0])
+						exitflag = 1;
+					else
+						--msp;
+				} else {
+					/* else consume argument */
+					esp->flag1 = 0;
 					esp->op = OP_START;
 				}
 				break;
 
-				/* skip comments */
-
+			/* skip comments */
 			case '!':
-				while (getcmdc(trace_sw) != '!');
+				while (getcmdc(trace_sw) != '!')
+					;
 				esp->flag1 = esp->flag2 = 0;
 				break;
 
-				/* modifiers */
-
+			/* modifiers */
 			case '@':
 				atflag++;
 				break;
 
 			case ':':
-				if (peekcmdc(':'))		/* is it "::" ? */
-				{
-					getcmdc(trace_sw);	/* yes, skip 2nd : */
-					colonflag = 2;		/* and set flag to show 2 */
-				}
-				else colonflag = 1;		/* otherwise just 1 colon */
+				/* is it "::" ? */
+				if (peekcmdc(':')) {
+					/*
+					 * yes, skip 2nd :
+					 * and set flag to show 2
+					 */
+					getcmdc(trace_sw);
+					colonflag = 2;
+				} else
+					/* otherwise just 1 colon */
+					colonflag = 1;
 				break;
 
-				/* trace control */
-
+			/* trace control */
 			case '?':
 				trace_sw = !(trace_sw);
 				break;
 
-				/* values */
-
+			/* values */
 			case '.':
 				esp->val1 = dot;
 				esp->flag1 = 1;
@@ -114,14 +130,15 @@ exec_cmdstr()
 				esp->val1 = 0;
 				esp->flag1 = 1;
 				break;
-			case 'h':
+			case 'h':
 				esp->val1 = z;
 				esp->val2 = 0;
 				esp->flag2 = esp->flag1 = 1;
 				esp->op = OP_START;
 				break;
 
-				case CTL (S):		/* -length of last insert, etc. */
+			/* -length of last insert, etc. */
+			case CTL (S):
 				esp->val1 = ctrl_s;
 				esp->flag1 = 1;
 				break;
@@ -134,44 +151,54 @@ exec_cmdstr()
 				break;
 
 			case '(':
-				if (++esp > &estack[ESTACKSIZE-1]) ERROR(E_PDO);
+				if (++esp > &estack[ESTACKSIZE-1])
+					ERROR(E_PDO);
 				esp->flag2 = esp->flag1 = 0;
 				esp->op = OP_START;
 				break;
 
-			case CTL (E):				/* form feed flag */
+			case CTL (E):			/* form feed flag */
 				esp->val1 = ctrl_e;
 				esp->flag1 = 1;
 				break;
 
-			case CTL (N):				/* eof flag */
+			case CTL (N):			/* eof flag */
 				esp->val1 = infile->eofsw;
 				esp->flag1 = 1;
 				break;
 
-			case CTL (^):				/* value of next char */
+			case CTL (^):			/* value of next char */
 				esp->val1 = getcmdc(trace_sw);
 				esp->flag1 = 1;
 				break;
 
-				/* date, time */
-
+			/* date, time */
 			case CTL (B):
 			case CTL (H):
 				(void)time(&t);
 				timeptr = localtime(&t);
 				esp->val1 = (cmdc == CTL (B)) ?
-				timeptr->tm_year * 512   + timeptr->tm_mon * 32  + timeptr->tm_mday :
-				timeptr->tm_hour * 1800  + timeptr->tm_min * 30  + timeptr->tm_sec/2;
+					timeptr->tm_year * 512
+						+ timeptr->tm_mon * 32
+						+ timeptr->tm_mday
+					:
+					timeptr->tm_hour * 1800
+						+ timeptr->tm_min * 30
+						+ timeptr->tm_sec/2;
 				esp->flag1 = 1;
-				make_buffer(&timbuf);		/* make a time buffer */
-				timestring = asctime(timeptr);
-				for (timbuf.z = 0; timbuf.z < 24; timbuf.z++)		/* copy character string */
-					timbuf.f->ch[timbuf.z] = *(timestring + timbuf.z);
-				break;
-				/* number of characters to matching ( ) { } [ ] */
 
-				case CTL (P):
+				/* make a time buffer */
+				make_buffer(&timbuf);
+				timestring = asctime(timeptr);
+
+				/* copy character string */
+				for (timbuf.z = 0; timbuf.z < 24; timbuf.z++)
+					timbuf.f->ch[timbuf.z] =
+						*(timestring + timbuf.z);
+				break;
+			/* number of characters to matching ( ) { } [ ] */
+
+			case CTL (P):
 				do_ctlp();
 				break;
 
@@ -192,7 +219,8 @@ exec_cmdstr()
 						break;
 
 					case OP_SUB:
-						esp->val1 = esp->exp - esp->val1;
+						esp->val1 =
+						 esp->exp - esp->val1;
 						esp->op = OP_START;
 						break;
 
@@ -226,5 +254,3 @@ exec_cmdstr()
 	}		/* end of "while" command loop */
 	return;
 }			/* end of exec_cmdstr */
-
-
