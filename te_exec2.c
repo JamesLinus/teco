@@ -373,7 +373,7 @@ do_eq()
 		setup_tty(TTY_SUSP);
 
 		/* fork a new process */
-		t = vfork();
+		t = fork();
 
 		/* if this is the child */
 		if (t == 0) {

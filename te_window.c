@@ -11,12 +11,12 @@
 #ifdef SIGWINCH
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <sys/termio.h>
+#include <sys/termios.h>
 #undef TAB
 #endif
 #include "te_defs.h"
 
-extern int ospeed;
+extern short ospeed;
 
 /* maximum screen height and width (horiz and vert, not height and vidth) */
 #define W_MAX_V 70
@@ -227,7 +227,9 @@ static struct winsize w;
 void
 recalc_tsize()
 {
-	if (ioctl(0, TIOCGWINSZ, &w) >= 0) {
+	if (ioctl(2, TIOCGWINSZ, &w) >= 0) {
+		if (!w.ws_row || !w.ws_col)
+			return;
 		WN_height = w.ws_row;
 		WN_width = w.ws_col;
 		window_size = WN_height - WN_scroll;
@@ -250,7 +252,6 @@ int lines, cols;
 	struct sigaction act;
 	static int act_setup = 0;
 #endif
-
 	if ((lines >= win_min[2]) && (lines <= win_max[2]))
 		window_size = win_data[2] = lines;
 	if ((cols >= win_min[1]) && (cols <= win_max[1]))
@@ -258,7 +259,7 @@ int lines, cols;
 #ifdef SIGWINCH
 	if (!act_setup) {
 		act.sa_handler = recalc_tsize;
-		act.sa_mask = 0L;
+		memset(&act.sa_mask, '\0', sizeof(act.sa_mask));
 		act.sa_flags = 0;
 		(void)sigaction(SIGWINCH, &act, (struct sigaction *)0);
 		act_setup = 1;
@@ -305,13 +306,15 @@ window(arg)
 			/* std out is not a terminal */
 			win_speed = 0;
 		} else {
-			for (win_speed = 1;
-				(win_speeds[win_speed] != ospeed) &&
-					(win_speed < B38400);
-				win_speed++)
-					;
-			if (win_speed == 0)
+			int lim = sizeof(win_speeds);
+
+			for (win_speed = 1; win_speed < lim; win_speed++) {
+				if ((win_speeds[win_speed] == ospeed))
+					break;
+			}
+			if ((win_speed < 0) || (win_speed >= lim)) {
 				win_speed = B19200;
+			}
 		}
 
 		/* set up screen image buffer */

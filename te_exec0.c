@@ -3,6 +3,7 @@
 /* They may be copied if this copyright notice is included */
 
 /* te_exec0.c   execute command string   11/31/86 */
+#include <sys/types.h>
 #include "te_defs.h"
 #include <time.h>
 

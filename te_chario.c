@@ -5,7 +5,7 @@
 /* te_chario.c   character I/O routines   10/9/86 */
 #include <sys/types.h>
 #include <signal.h>
-#include <sys/termio.h>
+#include <sys/termios.h>
 #include <errno.h>
 #include "te_defs.h"
 
@@ -58,13 +58,13 @@ int arg;
 	if (arg == TTY_ON)
 	{
 		/* get std input characteristics */
-		ioerr = ioctl(fileno(stdin), TCGETP, &tty_orig);
+		ioerr = ioctl(fileno(stdin), TC_PX_GETATTR, &tty_orig);
 
 		/* nonzero if input not a terminal */
 		inp_noterm = (ioerr && (errno == ENOTTY));
 
 		/* get std output characteristics */
-		ioerr = ioctl(fileno(stdout), TCGETP, &tmpbuf);
+		ioerr = ioctl(fileno(stdout), TC_PX_GETATTR, &tmpbuf);
 
 		/* nonzero if output not a terminal */
 		out_noterm = (ioerr && (errno == ENOTTY));
@@ -88,7 +88,7 @@ int arg;
 	if ((arg == TTY_ON) || (arg == TTY_RESUME))
 	{
 		/* Set up TTY for TECO */
-		ioctl(fileno(stdin), TCSETPW, &tty_new);
+		ioctl(fileno(stdin), TC_PX_SETATTRD, &tty_new);
 #ifndef DEBUG
 		/* Handle signals */
 		sigaction(SIGTSTP, &stpsigstruc, 0);
@@ -97,7 +97,7 @@ int arg;
 #endif
 	} else {
 		/* Restore to original state */
-		ioctl(fileno(stdin), TCSETPW, &tty_orig);
+		ioctl(fileno(stdin), TC_PX_SETATTRD, &tty_orig);
 #ifndef DEBUG
 		sigaction(SIGTSTP, &nosigstr, 0);
 		sigaction(SIGINT, &nosigstr, 0);
@@ -137,7 +137,7 @@ again:
 
 	/* set to "no delay" mode */
 	tty_new.c_cc[VMIN] = 0;
-	ioctl(fileno(stdin), TCSETPW, &tty_new);
+	ioctl(fileno(stdin), TC_PX_SETATTRD, &tty_new);
 
 	/* read character, or -1, skip nulls */
 	do {
@@ -147,7 +147,7 @@ again:
 
 	/* reset to normal mode */
 	tty_new.c_cc[VMIN] = 1;
-	ioctl(fileno(stdin), TCSETPW, &tty_new);
+	ioctl(fileno(stdin), TC_PX_SETATTRD, &tty_new);
 
 	/* If interrupted, try again */
 	if ((cnt < 0) && (err == EINTR))
@@ -229,13 +229,13 @@ int_handler()
 		in_read = 0;
 
 		/* disable interrupt char */
-		ioctl(fileno(stdin), TCSETPW, &tc_noint);
+		ioctl(fileno(stdin), TC_PX_SETATTRD, &tc_noint);
 
 		/* send a ^C to input stream */
 		qio_char(CTL (C));
 
 		/* reenable interrupt char */
-		ioctl(fileno(stdin), TCSETPW, &tty_new);
+		ioctl(fileno(stdin), TC_PX_SETATTRD, &tty_new);
 	}
 }
 #endif
