@@ -206,6 +206,7 @@ do_e()
 			if (eisw) {
 				/* return the file descriptor */
 				fclose(eisw);
+				eisw = NULL;
 
 				/*
 				 * return the command string used by
@@ -230,8 +231,9 @@ do_e()
 		}
 
 		/* if a command file had been open, close it */
-		if (eisw)
+		if (eisw) {
 			fclose(eisw);
+		}
 		esp->val1 = (eisw = t_eisw) ? -1 : 0;
 		esp->flag1 = colonflag;
 		colonflag = 0;
