@@ -4,6 +4,8 @@
 
 /* te_exec2.c   process "E" and "F" commands   2/26/87 */
 #include "te_defs.h"
+#include <sys/types.h>
+#include <sys/stat.h>
 
 struct qh oldcstring;			/* hold command string during ei */
 
@@ -98,9 +100,15 @@ do_e()
 		if (!(infile->fd = fopen(fbuf.f->ch, "r"))) {
 			if (!colonflag) ERROR(E_FNF);
 		} else {
+			struct stat st;
+
 			/* output file already open */
 			if (outfile->fd)
 				ERROR(E_OFO);
+
+			/* get modes from original file now */
+			if (fstat(fileno(infile->fd), &st) < 0)
+				st.st_mode = 0600;
 
 			/* save file string */
 			for (ll = 0; ll < CELLSIZE; ll++)
@@ -121,8 +129,10 @@ do_e()
 					fclose(infile->fd);
 					infile->fd = NULL;
 				}
-			} else
+			} else {
+				chmod(outfile->t_name, st.st_mode & 0777);
 				outfile->bak = 1;	/* set backup mode */
+			}
 		}
 		infile->eofsw = -1 - (esp->val1 = (infile->fd) ? -1 : 0);
 		esp->flag1 = colonflag;
