@@ -10,11 +10,7 @@ fit in a 80-column window, and left out the ^L's which were originally
 entered.  If you don't like the coding style, accept my apologies and
 flames to /dev/null!
 
-The result of my macro porting is the lib.t.UU file.  To avoid problems
-of converting escapes and control characters, I ship my TECO macros
-in this format.  Merely uudecode the file, then un-tar it.  It will
-create a lib/ subdirectory with individual files, each ready to be
-loaded with eilib/foo$$.
+A number of useful macros are in lib/.
 
 This work is provided as-is without any guarantees.  It is the result
 of my own personal work, and does not represent the views or interests
@@ -22,4 +18,4 @@ of my current employer.
 
 					Good luck!
 					Andy Valencia
-					vandys@cisco.com
+					vandys@zendo.com
