@@ -8,7 +8,7 @@
 #include <ctype.h>
 #include <setjmp.h>
 
-#define CTL(x) (('x') & 0x1f)	/* for control chars					*/
+#define CTL(x) ((x) & 0x1f)	/* for control chars */
 #define ERROR(e) longjmp(xxx, (e))
 #define BLOCKSIZE (0x10000 - 8)	/* size of memory block to allocate		*/
 #define CELLSIZE 256			/* number of characters per cell		*/
