@@ -3,6 +3,12 @@
 !*  for moving about. !
 @^ue\
 
+!* Preserve Q registers !
+[k
+
+!* Clear kill buffer !
+^uk
+
 !* No-echo, no-wait TTY, small window !
 1,7:w
 et#40et
@@ -19,6 +25,9 @@ et#40et
  !* Read key into Qa, update and sleep if none available !
  ^tua qa+1"e 1w et-32et ^tua et#40et'
 
+ !* Bump command counter !
+ %e
+
  !* If text, insert and iterate !
  qa-31"g qai f<'
 
@@ -26,7 +35,7 @@ et#40et
  qa-127"e -1d f<'
 
  !* Else vector out to actions for supported keys !
- qa@o/N,CA,CB,N,CD,CE,CF,N,CH,CI,CJ,CK,CL,CM,CN,CO,CP,CQ,N,N,N,N,CV,CW,CX,N,N,ES/
+ qa@o/N,CA,CB,N,CD,CE,CF,N,CH,CI,CJ,CK,CL,CM,CN,CO,CP,CQ,N,N,N,N,CV,CW,CX,CY,N,ES/
 
  !* Ignore !
 !N!
@@ -67,8 +76,15 @@ et#40et
  f<
 
 !CK!
+ !* If we've moved since last ^k, clear kill buffer !
+ qe-1"n ^uk'
+
+ !* Reset kill buffer motion counter !
+ 0ue
+
+ !* Delete empty line, or delete to end of line !
  .ua 1l2r
- qa-."e 1k | qa,.k'
+ qa-."e 1:xk 1k | qa,.:xk qa,.k'
  f<
 
 !CL!
@@ -100,10 +116,11 @@ et#40et
  f<
 
 !CV!
- 24l f<
+ 24l f<
 
 !CW!
- f<
+ qd-."g .,qd:xk .,qdk | qd,.:xk qd,.k'
+ .ud f<
 
 !CX!
  !* ^X-char; get next char to complete command !
@@ -114,6 +131,10 @@ et#40et
 
  !* All others--ignore !
  f<
+
+!CY!
+ !* Insert kill buffer !
+ gk f<
 
 !ES!
  !* Get arg char for ESC !
@@ -131,9 +152,13 @@ et#40et
  !* ESC-p positions screen; gets one more char !
  qa-^^p"e .,6:w f<'
 
+ !* ESC-space, set mark !
+ qa-^^ "e .ud f<'
+
  !* ESC-ESC--go back to TECO !
  qa-^^"e
   5,7:w  et-40et
+  ]k
   ^c
  '
 
