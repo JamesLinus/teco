@@ -75,26 +75,26 @@ exec_cmds1()
 		esp->flag1 = 0;
 		break;
 
-	case CTL (_):
+	case CTL('_'):
 		if (!esp->flag1) ERROR(E_NAB);
 		else esp->val1 = ~esp->val1;
 		break;
 
 		/* radix control */
 
-	case CTL (D):
+	case CTL('D'):
 		ctrl_r = 10;
 		esp->flag1 = 0;
 		esp->op = OP_START;
 		break;
 
-	case CTL (O):
+	case CTL('O'):
 		ctrl_r = 8;
 		esp->flag1 = 0;
 		esp->op = OP_START;
 		break;
 
-	case CTL (R):
+	case CTL('R'):
 		/* fetch it */
 		if (!esp->flag1) {
 			esp->val1 = ctrl_r;
@@ -113,9 +113,9 @@ exec_cmds1()
 	/* other commands */
 
 	/* 1 ^C stops macro execution, 2 exit */
-	case CTL (C):
+	case CTL('C'):
 		/* 2 ^C: stop execution and exit */
-		if (peekcmdc(CTL (C)))
+		if (peekcmdc(CTL('C')))
 			exitflag = -1;
 
 		/* 1 ^C: in command string: stop execution */
@@ -126,7 +126,7 @@ exec_cmds1()
 			--msp;
 		break;
 
-	case CTL (X):			/* search mode flag */
+	case CTL('X'):			/* search mode flag */
 		set_var(&ctrl_x);
 		break;
 
@@ -425,7 +425,7 @@ exec_cmds1()
 
 		/* number of chars until nth line feed */
 
-	case CTL (Q):
+	case CTL('Q'):
 		esp->val1 = lines(get_value(1));
 		esp->flag1 = 1;
 		break;
@@ -568,9 +568,9 @@ exec_cmds1()
 
 	/* type text from command string */
 
-	case CTL (A):
+	case CTL('A'):
 		/* set terminator */
-		term_char = (atflag) ? getcmdc(trace_sw) : CTL(A);
+		term_char = (atflag) ? getcmdc(trace_sw) : CTL('A');
 
 		/* output chars */
 		while (getcmdc(0) != term_char)
@@ -603,7 +603,7 @@ exec_cmds1()
 
 	/* q-register text loading commands */
 
-	case CTL (U):
+	case CTL('U'):
 		mm = getqspec(0, getcmdc(trace_sw));
 
 		/* X, ^U commands destroy previous contents */
@@ -847,7 +847,7 @@ exec_cmds1()
 		}
 		break;
 
-	case CTL (T):			/* type or input character */
+	case CTL('T'):			/* type or input character */
 		/* type */
 		if (esp->flag1) {
 			type_char(esp->val1);
@@ -996,7 +996,7 @@ exec_cmds1()
 		do_window(0);	/* this stuff is with the window driver */
 		break;
 
-	case CTL (W):
+	case CTL('W'):
 		do_window(1);	/* this is, too */
 		break;
 

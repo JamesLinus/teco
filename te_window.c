@@ -63,7 +63,7 @@ short redraw_sw;		/* forces absolute redraw */
  * fill characters and terminal speeds:
  * 0th entry used when std out is not a terminal
  */
-char win_speeds[] = { 
+int win_speeds[] = { 
 	0, 0, B9600, B4800, B2400, B1800, B1200, B600,
 	B300, B200, B150, B134, B110 };
 

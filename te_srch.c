@@ -46,8 +46,8 @@ build_string(lbuff)
 			if ((c &= 0177) < ' ') {
 				switch (c) {
 				/* take next char literally */
-				case CTL (Q):
-				case CTL (R):
+				case CTL('Q'):
+				case CTL('R'):
 					if ((c = getcmdc(trace_sw)) ==
 							term_char)
 						ERROR((msp <= &mstack[0]) ?
@@ -57,7 +57,7 @@ build_string(lbuff)
 					break;
 
 				/* take next char as lower case */
-				case CTL (V):
+				case CTL('V'):
 					if (getcmdc(trace_sw) == term_char)
 						ERROR((msp <= &mstack[0]) ?
 							E_UTC : E_UTM);
@@ -65,7 +65,7 @@ build_string(lbuff)
 					break;
 
 				/* take next char as upper case */
-				case CTL (W):
+				case CTL('W'):
 					if ((c = getcmdc(trace_sw)) ==
 							term_char)
 						ERROR((msp <= &mstack[0]) ?
@@ -74,7 +74,7 @@ build_string(lbuff)
 					break;
 
 				/* expanded constructs */
-				case CTL (E):
+				case CTL('E'):
 					if (getcmdc(trace_sw) == term_char)
 						ERROR((msp <= &mstack[0]) ?
 							E_UTC : E_UTM);
@@ -125,7 +125,7 @@ build_string(lbuff)
 					default:
 
 						/* not special: store the ^E */
-						bb.p->ch[bb.c] = CTL (E);
+						bb.p->ch[bb.c] = CTL('E');
 						fwdcx(&bb);
 						++count;
 
@@ -567,7 +567,7 @@ srch_cmp()
 	switch (mapch_l[sm.p->ch[sm.c]]) {
 
 		/* match anything but following construct */
-		case CTL (N):
+		case CTL('N'):
 			/* don't read past end of string */
 			if (sm.dot >= sm.z)
 				ERROR(E_ISS);
@@ -577,12 +577,12 @@ srch_cmp()
 			return(!srch_cmp());
 
 		/* match any character */
-		case CTL (X):
+		case CTL('X'):
 			return(1);
 
 		/* take next char literally */
-		case CTL (Q):
-		case CTL (R):
+		case CTL('Q'):
+		case CTL('R'):
 
 			/* don't read past end of string */
 			if (sm.dot >= sm.z)
@@ -594,10 +594,10 @@ srch_cmp()
 				*(pmap + sm.p->ch[sm.c]));
 
 		/* match any nonalphanumeric */
-		case CTL (S):
+		case CTL('S'):
 			return(!isalnum(sb.p->ch[sb.c]));
 
-		case CTL (E):
+		case CTL('E'):
 			/* don't read past end of string */
 			if (sm.dot >= sm.z)
 				ERROR(E_ISS);

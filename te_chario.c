@@ -232,7 +232,7 @@ int_handler()
 		tcsetattr(fileno(stdin), TCSAFLUSH, &tc_noint);
 
 		/* send a ^C to input stream */
-		qio_char(CTL (C));
+		qio_char(CTL('C'));
 
 		/* reenable interrupt char */
 		tcsetattr(fileno(stdin), TCSAFLUSH, &tty_new);

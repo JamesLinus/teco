@@ -96,7 +96,7 @@ prompt:
 				/* disable dangerous last chars */
 				lastc = ' ';
 				continue;
-			} else if (c == CTL(U)) {
+			} else if (c == CTL('U')) {
 				/* process "erase current line" */
 
 				/* erase line */
@@ -181,7 +181,7 @@ prompt:
 						err = 0;
 						goto restart;
 					} else if ((c == LF) ||
-						(c == CTL (H))) {
+						(c == CTL('H'))) {
 
 						/* line feed, backspace */
 
@@ -227,8 +227,8 @@ prompt:
 
 				/* check ^G-something */
 
-				if (lastc == CTL (G)) {
-					if (c == CTL(G)) {
+				if (lastc == CTL('G')) {
+					if (c == CTL('G')) {
 
 						/*
 						 * Save count for possible
@@ -324,7 +324,7 @@ prompt:
 			break;
 
 		/* immediate exit */
-		if ((c == CTL (C)) && (lastc == CTL (C)))
+		if ((c == CTL('C')) && (lastc == CTL('C')))
 			return(-1);
 
 		/* keep track of last char */

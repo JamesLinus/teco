@@ -139,12 +139,12 @@ exec_cmdstr()
 				break;
 
 			/* -length of last insert, etc. */
-			case CTL (S):
+			case CTL('S'):
 				esp->val1 = ctrl_s;
 				esp->flag1 = 1;
 				break;
 
-			case CTL (Y):		/* .-^S, . */
+			case CTL('Y'):		/* .-^S, . */
 				esp->val2 = dot + ctrl_s;
 				esp->val1 = dot;
 				esp->flag1 = esp->flag2 = 1;
@@ -158,27 +158,27 @@ exec_cmdstr()
 				esp->op = OP_START;
 				break;
 
-			case CTL (E):			/* form feed flag */
+			case CTL('E'):			/* form feed flag */
 				esp->val1 = ctrl_e;
 				esp->flag1 = 1;
 				break;
 
-			case CTL (N):			/* eof flag */
+			case CTL('N'):			/* eof flag */
 				esp->val1 = infile->eofsw;
 				esp->flag1 = 1;
 				break;
 
-			case CTL (^):			/* value of next char */
+			case CTL('^'):			/* value of next char */
 				esp->val1 = getcmdc(trace_sw);
 				esp->flag1 = 1;
 				break;
 
 			/* date, time */
-			case CTL (B):
-			case CTL (H):
+			case CTL('B'):
+			case CTL('H'):
 				(void)time(&t);
 				timeptr = localtime(&t);
-				esp->val1 = (cmdc == CTL (B)) ?
+				esp->val1 = (cmdc == CTL('B')) ?
 					timeptr->tm_year * 512
 						+ timeptr->tm_mon * 32
 						+ timeptr->tm_mday
@@ -199,7 +199,7 @@ exec_cmdstr()
 				break;
 			/* number of characters to matching ( ) { } [ ] */
 
-			case CTL (P):
+			case CTL('P'):
 				do_ctlp();
 				break;
 
