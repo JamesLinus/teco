@@ -14,6 +14,11 @@ gz j
  @o/done/
 '
 
+!If invoked as "book", invoke book viewer!
+:@s/book/"s
+ hk  @o/book/
+'
+
 !Skip command name arg!
 @:s/ /u0
 
