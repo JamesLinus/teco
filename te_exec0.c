@@ -8,11 +8,9 @@
 
 exec_cmdstr()
 {
-	char c;
 	int digit_sw;
 	struct tm *timeptr;
 	char *timestring, *asctime();
-	struct timeval timevalue, tzvalue;
 	time_t t;
 
 	exitflag = 0;					/* set flag to "executing" */

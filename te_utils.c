@@ -90,20 +90,7 @@ struct qp *get_dcell()
 }
 
 
-/* free a list of cells */
-free_dlist(p)
-struct qp *p;
-{
-	struct qp *t;
-
-	if (p != NULL)
-	{
-		for (t = p; t->f != NULL; t = t->f); /* find end of ret'd list */
-		t->f = freedcell;	/* put ret'd list at head of "free" list */
-		freedcell = p;
-	}
-}
-/* build a buffer:  called with address of a qh */
+/* build a buffer:  called with address of a qh */
 /* if no buffer there, get a cell and link it in */
 make_buffer(p)
 struct qh *p;

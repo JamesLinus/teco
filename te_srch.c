@@ -9,8 +9,8 @@
 /* used for search, tag, file name operations				*/
 /* returns 0 if empty string entered, nonzero otherwise		*/
 
-int build_string(buff)
-	struct qh *buff;		/* arg is addr of q-reg header */
+int build_string(lbuff)
+	struct qh *lbuff;		/* arg is addr of q-reg header */
 {
 	int count;			/* char count */
 	struct buffcell *tp;		/* pointer to temporary string */
@@ -95,10 +95,10 @@ int build_string(buff)
 			fwdcx(&bb);					/* advance pointer */
 			++count;					/* count characters */
 		}						/* end "for" loop */
-		free_blist(buff->f);		/* return old buffer */
-		buff->f = tp;				/* put in new one */
-		buff->f->b = (struct buffcell *) buff;
-		buff->z = count;			/* store count of chars in string */
+		free_blist(lbuff->f);		/* return old buffer */
+		lbuff->f = tp;				/* put in new one */
+		lbuff->f->b = (struct buffcell *) lbuff;
+		lbuff->z = count;			/* store count of chars in string */
 	}					/* end non-null string */
 	else getcmdc(trace_sw);		/* empty string: consume terminator */
 	return(count);			/* return char count */

@@ -224,7 +224,7 @@ char c;
 {
 	if (isdigit(c))
 		return(c - '0' + 1);
-	else if isalpha(c)
+	else if (isalpha(c))
 		return(mapch_l[c] - 'a' + 11);
 
 	/*
@@ -240,6 +240,7 @@ char c;
 		if (c == '%') return (SYSBUF);
 	}
 	ERROR(E_IQN);
+	/*NOTREACHED*/
 }
 
 

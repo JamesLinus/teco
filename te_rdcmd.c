@@ -9,7 +9,7 @@ int ccount;				/* count of chars read in */
 
 int read_cmdstr()
 {
-	char c;				/* temporary character */
+	int c;				/* temporary character */
 	int i;				/* temporary */
 
 	goto prompt;
@@ -24,7 +24,6 @@ prompt:					/* issue prompt */
 	ccount = 0;
 	lastc = ' ';
 
-reline:					/* continue reading */
 	for (;;)			/* loop to read command string chars */
 	{
 		if (!eisw && !inp_noterm)		/* if terminal input */
