@@ -46,8 +46,6 @@ main(argc, argv)
 int argc;			/* arg count */
 char *argv[];		/* array of string pointers */
 {
-	int i;
-
 	/* copy command line to Qz */
 	save_args(argc, argv, &qreg[36]);
 
@@ -102,11 +100,12 @@ char *argv[];		/* array of string pointers */
 
 quit:
 	ev_val = es_val = 0;	/* no last one-line window */
-	window(WIN_REFR);		/* last display */
-	cleanup();				/* reset screen, terminal, output files */
-	exit(0);				/* and quit */
+	window(WIN_REFR);	/* last display */
+	cleanup();		/* reset screen, terminal, output files */
+	return(0);
 }
-/* reset screen state, keyboard state; remove open output files */
+
+/* reset screen state, keyboard state; remove open output files */
 
 cleanup()
 {
@@ -197,14 +196,14 @@ read_startup()
 /* routine to get terminal height and width from termcap */
 get_term_par()
 {
-	char buff[1024];	/* termcap buffer */
-	char *pname;		/* pointer to name of terminal */
+	static char lbuff[1024];	/* termcap buffer */
+	char *pname;			/* pointer to name of terminal */
 	extern char *getenv();
 
 	/* read terminal name */
 	if (pname = getenv("TERM")) {
 		/* get entry */
-		tgetent(buff, pname);
+		tgetent(lbuff, pname);
 
 		/* get #lines and #columns and set params */
 		set_term_par(tgetnum("li"), tgetnum("co"));
