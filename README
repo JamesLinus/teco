@@ -3,11 +3,6 @@ Andy Valencia.  This is a direct derivative work of the original
 author, and is distributed under the same terms as the original.  See
 the directory doc.orig/ for more details.
 
-The directory doc/ contains a hand-entered copy of an old TECO manual
-I always use.  More up-to-date versions of TECO documentation exist,
-but I find that this document is shorter, yet provides most of the
-things I look for.
-
 Aside from changes needed to port from a BSD environment to a System V
 one, I have fixed a large number of bugs, usually found in the process
 of porting TECO macros.  I have also converted the indentation style to
@@ -27,4 +22,4 @@ of my current employer.
 
 					Good luck!
 					Andy Valencia
-					vandys@sequent.com
+					vandys@roi.ca41.csd.mot.com
