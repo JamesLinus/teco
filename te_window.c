@@ -203,7 +203,9 @@ do_window(ref_flag)
 		/* no colon, or ^W command */
 		if (esp->flag1 || ref_flag) {
 			/* -1000W: "forget that output was done" */
-			if (!ref_flag && (esp->val1 == -1000))
+			if (!ref_flag &&
+					((esp->val1 == -1000) ||
+					 (esp->val1 == 32768)))
 				redraw_sw = 0;
 			else
 				/* nW or ^W refreshes window */
