@@ -26,7 +26,7 @@ et#40et
  qa-127"e -1d f<'
 
  !* Else vector out to actions for supported keys !
- qa@o/N,CA,CB,N,CD,CE,CF,N,CH,CI,CJ,CK,CL,CM,CN,CO,CP,N,N,N,N,N,CV,CW,CX,N,N,ES/
+ qa@o/N,CA,CB,N,CD,CE,CF,N,CH,CI,CJ,CK,CL,CM,CN,CO,CP,CQ,N,N,N,N,CV,CW,CX,N,N,ES/
 
  !* Ignore !
 !N!
@@ -81,16 +81,22 @@ et#40et
 
 !CN!
  .ua 0l qa-.ub
- 1l qb<::@s/^El/"s 2r 1; | 1c'> f<
+ 1l qb<::@s/^El/"s 1r 1; | 1c'> f<
 
 !CO!
  .ua @i/
 / qaj f<
 
 !CP!
- .ua 0l qa-.ub 
+ .ua 0l .uc  qa-.ub 
  -1l qbc 
- .-qa+1"g -1l'
+ .-qc+1"g qcj  2r'
+ f<
+
+!CQ!
+ @i/^Q/ 
+ ^tua qa+1"e 1w et-32et ^tua et#40et' 
+ -2d  qai
  f<
 
 !CV!
