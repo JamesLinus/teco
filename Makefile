@@ -6,6 +6,7 @@ CFLAGS=-O -g
 LIBS=-ltermcap
 
 te: $(OBJS)
+	rm -f te
 	$(CC) $(CFLAGS) -o te $(OBJS) $(LIBS)
 
 clean:
