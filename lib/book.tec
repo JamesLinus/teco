@@ -21,7 +21,7 @@ hk0j@i/er/ gb  @i/.txt/  hxc hk  mc  a 
 qbj 
 
 !* No-echo, no-wait TTY, small window !
-5,7:w
+1,7:w
 et#40et
 
 !* endless loop for commands !
