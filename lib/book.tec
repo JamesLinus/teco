@@ -9,8 +9,7 @@
 
 !book!
 
-@^uv%
-
+@^uv~
 !* Get filename to view into qb !
 hk gz 0j  @:s/ /  .,zxb 
 !* Build ':er<file>.next' into qc, execute it to get line # !
@@ -22,7 +21,7 @@ hk0j@i/er/ gb  @i/.txt/  hxc hk  mc  a 
 qbj 
 
 !* No-echo, no-wait TTY, small window !
-1,7:w
+5,7:w
 et#40et
 
 !* endless loop for commands !
@@ -61,6 +60,17 @@ et#40et
  !* k--backward one line !
  qa-^^k"e -l f<'
 
+ !* ^G--display position !
+ qa-7"e
+  :gb @^A/.txt line / 
+  !* Count lines to current position to Qd !
+  .ua 0ud bj  <.-qa"l l 1%d f>' 0;> qd:= 
+  @^A/ char / qaj .:= 
+  !* Show percentage of file !
+  @^A/ (/ .*100/z:= @^A/%)/ 
+  f<
+ '
+
  !* q--done !
  qa-^^q"e 0; '
 
@@ -74,8 +84,7 @@ hk qb\ 
 
 !* All done !
 ex 
-
-% mv 
+~ mv 
 
 !nobook!
 
