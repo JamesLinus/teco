@@ -1,0 +1,129 @@
+! mf--Fill paragraph point lies within, written all in TECO !
+! Optional arg is line length, default is 70 !
+@^uf\
++0ua
+qa"e
+ 70um
+|
+ qaum 
+'
+
+! Save text registers we scribble on !
+[t[u
+
+! Decimal !
+^D
+
+! Move to beginning of paragraph !
+
+! Move to first line which doesn't start with text !
+<
+ ! Move to start of line !
+ 0l
+
+ ! Leave loop when line doesn't start with alphanum !
+ ::@s/R/;
+
+ ! Back up another line !
+ -l
+
+ ! Exit at start of buffer !
+ ."e 1;'
+>
+
+! Don't include line unless it's just leading white space !
+."g
+ 0l::@s/S/"u 1l'
+'
+0l
+
+! Record position in QAn, also QSn so can delete when done !
+.ua
+qaus
+
+! Move to end of paragraph !
+<
+ ! Move to start of line !
+ 0l
+
+ ! Leave loop when line doesn't start with alphanum !
+ ::@s/R/;
+
+ ! Forward a line !
+ l
+>
+
+! End position in QBn !
+.ub
+
+! Avoid zero-length operations !
+qa-qb"e Empty paragraph specified
+ ^c'
+
+! Build the filled text right below the unfilled text, jumping back !
+! and forth !
+
+! QPn is our current output position !
+qbup
+! QCn is our current output column !
+0uc
+
+! Honor leading white space !
+qaj
+<
+ ::@s/S/;
+ 1r
+ ::@s/	/"s 8%c | 1%c 1c '
+>
+! Copy white space into output, skip past it !
+! Move text via QT !
+qa,.xt
+.ua
+qpjgt.up
+
+! Set QU to white space chars !
+@^uu/ 	
+/
+
+! While words, assemble and fill !
+<
+ ! Skip leading white space !
+ qaj
+ <::@s/gu/;>
+ .ua
+
+ ! Walk across word, pull into QT !
+ <::@s/gu/"s 1r 1; | 1c'>
+ qa,.xt
+ .ua
+
+ ! If we're past end of range we want, terminate loop !
+ qa-qb;
+
+ ! If it won't fit on the line, terminate current line and start over !
+ qc+:qt+1-qm"g
+  qpj @i/
+/ 0uc .up
+ '
+
+ ! Add in our word, update column counter !
+ qpj
+ qc"g
+  1r @::s/./"s @i/ / 1%c | 1c' ! Two spaces between sentences !
+  @i/ / 1%c ! Space between words !
+ '
+ gt .up
+ :qt%c
+>
+
+! Chop off unfilled text, add trailing newline !
+qpj
+@i/
+/
+qs,qbk
+qsj
+
+! Restore text registers we scribble on !
+]u]t
+\
+

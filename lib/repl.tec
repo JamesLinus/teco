@@ -1,0 +1,34 @@
+! mi--Interpolate reply from MH !
+@i\
+ [a
+ ! Read in file !
+ zj.ua
+ :@er/@/"f
+  Interpolation not possible
+   ^C
+ '
+ a
+
+ ! Trim headers off !
+ qaj
+ :@s/
+
+/"s
+  qa-.d
+ '
+ ! Put marker on each line of text !
+ <i>l.-z;>
+ ]a
+ zj
+
+ ! Move to head of text !
+ -@s/
+--------
+/0l
+
+ ! Insert white space for us to type into !
+ @i/
+
+
+/-2l
+\

@@ -1,0 +1,122 @@
+!* emacs.tec--do emacs-style motion and editing in TECO !
+!*  Clearly not a complete emulation, but sometimes convenient !
+!*  for moving about. !
+@^ue\
+
+!* No-echo, no-wait TTY, small window !
+1,7:w
+et#40et
+
+!* CR-LF flag!
+0ur
+
+!* endless loop for commands !
+<
+
+ !* Read key, update and sleep if none available !
+ ^tua qa+1"e 1w et-32et ^tua et#40et'
+
+ !* If text, insert and iterate !
+ qa-31"g qai f<'
+
+ !* Map delete key to erase !
+ qa-127"e -1d f<'
+
+ !* Else vector out to actions for supported keys !
+ qa@o/N,CA,CB,N,CD,CE,CF,N,CH,CI,CJ,CK,CL,CM,CN,CO,CP,N,N,N,N,N,CV,CW,N,N,N,ES/
+
+ !* Ignore !
+!N!
+ f<
+
+ !* Start of line !
+!CA!
+ 0l f<
+
+!CB!
+ 1r f<
+
+!CD!
+ 1d f<
+
+!CE!
+ 1l z-."g 2r ' f<
+
+!CF!
+ 1c f<
+
+!CH!
+ -1d f<
+
+!CI!
+ @i/	/ f<
+
+!CJ!
+ qr"e
+  .ub
+  0l .ua 
+  <::@s/^Es/;>
+  qa,.xa
+  qbj @i/
+/ ga
+ '
+ 0ur
+ f<
+
+!CK!
+ .ua 1l2r
+ qa-."e 1k | qa,.k'
+ f<
+
+!CL!
+ 0,7:w 1,7:w f<
+
+!CM!
+ 1ur
+ @i/
+/ f<
+
+!CN!
+ .ua 0l qa-.ub
+ 1l qb<::@s/^El/"s 2r 1; | 1c'> f<
+
+!CO!
+ .ua @i/
+/ qaj f<
+
+!CP!
+ .ua 0l qa-.ub 
+ -1l qbc 
+ .-qa+1"g -1l'
+ f<
+
+!CV!
+ 24l f<
+
+!CW!
+ f<
+
+!ES!
+ !* Get arg char for ESC !
+ ^tua qa+1"e 1w et-32et ^tua et#40et'
+
+ !* ESC-v goes back a page !
+ qa-118"e -24l f<'
+
+ !* ESC-< goes to top of file !
+ qa-60"e 0j f<'
+
+ !* ESC-> goes to bottom of file !
+ qa-62"e zj f<'
+
+ !* ESC-ESC--go back to TECO !
+ qa-27"e
+  5,7:w  et-40et
+  ^c
+ '
+
+ !* All others--no-op !
+ f<
+>
+
+\
