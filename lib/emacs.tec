@@ -10,10 +10,13 @@ et#40et
 !* CR-LF flag!
 0ur
 
-!* endless loop for commands !
-<
+!* Dot !
+.ud
 
- !* Read key, update and sleep if none available !
+!* endless loop for commands !
+<
+
+ !* Read key into Qa, update and sleep if none available !
  ^tua qa+1"e 1w et-32et ^tua et#40et'
 
  !* If text, insert and iterate !
@@ -23,7 +26,7 @@ et#40et
  qa-127"e -1d f<'
 
  !* Else vector out to actions for supported keys !
- qa@o/N,CA,CB,N,CD,CE,CF,N,CH,CI,CJ,CK,CL,CM,CN,CO,CP,N,N,N,N,N,CV,CW,N,N,N,ES/
+ qa@o/N,CA,CB,N,CD,CE,CF,N,CH,CI,CJ,CK,CL,CM,CN,CO,CP,N,N,N,N,N,CV,CW,CX,N,N,ES/
 
  !* Ignore !
 !N!
@@ -96,6 +99,16 @@ et#40et
 !CW!
  f<
 
+!CX!
+ !* ^X-char; get next char to complete command !
+ ^tua qa+1"e 1w et-32et ^tua et#40et'
+
+ !* ^X-^X, swap point and mark !
+ qa-24"e .ua qdj qaud f<'
+
+ !* All others--ignore !
+ f<
+
 !ES!
  !* Get arg char for ESC !
  ^tua qa+1"e 1w et-32et ^tua et#40et'
@@ -104,10 +117,10 @@ et#40et
  qa-118"e -24l f<'
 
  !* ESC-< goes to top of file !
- qa-60"e 0j f<'
+ qa-60"e .ud 0j f<'
 
  !* ESC-> goes to bottom of file !
- qa-62"e zj f<'
+ qa-62"e .ud zj f<'
 
  !* ESC-ESC--go back to TECO !
  qa-27"e
