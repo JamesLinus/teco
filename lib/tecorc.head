@@ -1,0 +1,81 @@
+!A startup file for TECO.  Provides: !
+! +line to start up at a line number !
+! "tecon" invokation to inhibit startup file !
+! -n to inhibit visual mode !
+! Appropriate handling for read-only files !
+
+@ei// hk 64ez
+gz j
+<::s ;>
+
+!If invoked as "tecon", no init!
+:@s/tecon/"s
+ hk 
+ @o/done/
+'
+
+!Skip command name arg!
+@:s/ /u0
+
+!Defaults: no +line_num, visual mode!
+-1ul0uv
+
+!If file name specified, edit that file!
+q0"s
+ <::s ;>
+ z-."g
+  !Chop off command name!
+  0k
+
+  <
+   !Interpret vi +line_num feature!
+   :@s/+/"s
+    \ul
+    @o/next/
+   '
+
+   !No visual mode!
+   :@s/-n/"s
+    -1uv
+    @o/next/
+   '
+
+   !All done with args!
+   0;
+
+   !Advance to next arg/filename!
+!next!
+   <::s ;>
+   0k
+  >
+
+  !Rest of buf is filename, if any!
+  z"g
+   hxz hk 
+   :ebqz "e
+    :erqz "e
+     File not found:  :g* 
+     
+     hkekex
+    '
+    %File  :g*  read-only... hit a key:  
+   '
+   y
+  '
+
+  !If line specified, jump to it!
+  ql"g
+   0jql-1l
+  '
+ '
+'
+
+!No file--clean up and start with empty!
+q0"u
+ 0j hk
+'
+
+!Turn on visual if requested!
+qv"e
+ 5,7:w 0,0xz
+'

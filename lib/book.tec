@@ -1,0 +1,65 @@
+!* book.tec--book viewer !
+!*  Remembers last viewed location, and returns to it !
+!*  Command chars are read into qa numeric !
+!*  File position is in qb numeric !
+!*  File name being viewed is in qb text !
+!*  Previous location kept in qc numeric !
+!*  Constructed commands are assembled in qc text !
+@^uv%
+
+!* Get filename to view into qb !
+hk gz 0j  @:s/ /  .,zxb 
+!* Build ':er<file>.next' into qc, execute it to get line # !
+hk0j@i/:er/ gb  @i/.next/  hxc hk  mc"e 0ub | a 0j  \ub hk' 
+!* Build ':er<file>.txt' into qc, execute it to get file contents !
+hk0j@i/er/ gb  @i/.txt/  hxc hk  mc  a 
+
+!* Jump to recorded position !
+qbj 
+
+!* No-echo, no-wait TTY, small window !
+1,7:w
+et#40et
+
+!* endless loop for commands !
+<
+
+ !* Read key into Qa, update and sleep if none available !
+ ^tua qa+1"e 1w et-32et ^tua et#40et'
+
+ !* Space bar--advance one page !
+ qa-32"e 20l  f<'
+
+ !* b--back one page !
+ qa-98"e -20l  f<'
+
+ !* d--forward half page !
+ qa-100"e 10l  f<'
+
+ !* u--back half page !
+ qa-117"e -10l  f<'
+
+ !* g--go to top !
+ qa-103"e .uc 0j f<'
+
+ !* G--go to bottom !
+ qa-71"e .uc zj f<'
+
+ !* '--jump to previous !
+ qa-39"e .ua qcj qauc f<'
+
+ !* q--done !
+ qa-113"e 0; '
+
+ !* All others--no-op !
+ f<
+> 
+
+!* Save position back to <file>.next !
+.ub hkek  @i/ew/ gb @i/.next/  hxc  mc 
+hk qb\ 
+
+!* All done !
+ex 
+
+%
