@@ -1,0 +1,10 @@
+This is a sample library of a startup environment which makes available
+several functions via pre-loaded Q registers.  The Makefile puts these
+together into a .tecorc which assembles all these functions in a form
+useful during teco startup.  The functions provided are:
+
+	block.tec	QS Block indent functions, useful for C
+	book.tec	A book reader (run teco raw, no other functions)
+	emacs.tec	QE A mini-emacs macro
+	fill.tec	QF Paragraph fill
+	repl.tec	QI MH-style reply function
