@@ -32,37 +32,37 @@ et#40et
  ^tua qa+1"e .,6:w  1w  et-32et ^tua et#40et'
 
  !* Space bar--advance one page !
- qa-32"e 2:w-1l  f<'
+ qa-^^ "e 2:w-1l  f<'
 
  !* b--back one page !
- qa-98"e -1*(2:w-1)l  f<'
+ qa-^^b"e -1*(2:w-1)l  f<'
 
  !* d--forward half page !
- qa-100"e 10l  f<'
+ qa-^^d"e 10l  f<'
 
  !* u--back half page !
- qa-117"e -10l  f<'
+ qa-^^u"e -10l  f<'
 
  !* g--go to top !
- qa-103"e .uc 0j f<'
+ qa-^^g"e .uc 0j f<'
 
  !* G--go to bottom !
- qa-71"e .uc zj  -1l f<'
+ qa-^^G"e .uc zj  -1l f<'
 
  !* '--jump to previous !
- qa-39"e .ua qcj qauc f<'
+ qa-^^'"e .ua qcj qauc f<'
 
  !* return--forward one line !
  qa-13"e l f<'
 
  !* j--forward one line !
- qa-106"e l f<'
+ qa-^^j"e l f<'
 
  !* k--backward one line !
- qa-107"e -l f<'
+ qa-^^k"e -l f<'
 
  !* q--done !
- qa-113"e 0; '
+ qa-^^q"e 0; '
 
  !* All others--no-op !
  f<
