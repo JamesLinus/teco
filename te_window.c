@@ -108,6 +108,41 @@ vt(func)
 	}
 }
 
+/*
+ * move_window()
+ *	For top of screen to be at the given location
+ *
+ * Returns actual location (which may differ from the requested one if it
+ * can't be reached (probably due to dot being off the screen to satisfy
+ * the request)).
+ */
+static int
+move_window(int loc)
+{
+	/* home */
+	printf("\033[H");
+	term_x = term_y = 0;
+
+	/*
+	 * Move to this position
+	 */
+	if (!w_setptr(loc, &w_p1)) {
+		return(wlp[0]->start);
+	}
+
+	/* show screen */
+	curr_y = wlp[0]->cflag = wlp[0]->col = curr_x = 0;
+	wlp[0]->start = loc;
+	window2(0);
+
+	/* cursor to bottom */
+	printf("\033[%d;0H", WN_height);
+	term_x = 0;
+	term_y = WN_height-1;
+
+	return(loc);
+}
+
 /* routine to set window parameters */
 
 /*
@@ -145,6 +180,13 @@ do_window(ref_flag)
 			esp->val1 = win_data[i];
 			esp->flag1 = 1;
 		} else {
+			/* move top of window to given location */
+			if (i == 6) {
+				esp->val1 = move_window(esp->val2);
+				esp->flag2 = 0;
+				return;
+			}
+
 			/* check range */
 			if ((esp->val2 < win_min[i]) ||
 					(esp->val2 > win_max[i]))
