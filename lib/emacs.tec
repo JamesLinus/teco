@@ -122,6 +122,9 @@ et#40et
  !* ESC-> goes to bottom of file !
  qa-62"e .ud zj f<'
 
+ !* ESC-p positions screen; gets one more char !
+ qa-112"e .,6:w f<'
+
  !* ESC-ESC--go back to TECO !
  qa-27"e
   5,7:w  et-40et
