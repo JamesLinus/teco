@@ -1,91 +1,108 @@
-/* TECO for Ultrix   Copyright 1986 Matt Fichtenbaum						*/
-/* This program and its components belong to GenRad Inc, Concord MA 01742	*/
-/* They may be copied if this copyright notice is included					*/
+/*
+ * TECO for Ultrix   Copyright 1986 Matt Fichtenbaum
+ * This program and its components belong to GenRad Inc, Concord MA 01742
+ * They may be copied if this copyright notice is included
+ */
 
 /* te_subs.c subroutines  11/8/85 */
 #include "te_defs.h"
 
-/* routines to copy a string of characters		*/
-/* movenchars(from, to, n)						*/
-/*  	from, to are the addresses of qps		*/
-/*    n is the number of characters to move		*/
-/* moveuntil(from, to, c, &n, max)				*/
-/*	  c is the match character that ends the move */
-/*    n is the returned number of chars moved	*/
-/* max is the maximum number of chars to move	*/
-
+/*
+ * routines to copy a string of characters
+ * movenchars(from, to, n)
+ *  	from, to are the addresses of qps
+ *    n is the number of characters to move
+ * moveuntil(from, to, c, &n, max)
+ *	  c is the match character that ends the move
+ *    n is the returned number of chars moved
+ * max is the maximum number of chars to move
+ */
 movenchars(from, to, n)
-struct qp *from, *to;		/* address of buffer pointers */
-register int n;				/* number of characters */
+	struct qp *from, *to;
+	register int n;
 {
-	register struct buffcell *fp, *tp;	/* local qp ".p" pointers	*/
-	register int fc, tc;				/* local qp ".c" subscripts */
+	register struct buffcell *fp, *tp;	/* local qp ".p" pointers */
+	register int fc, tc;			/* local qp ".c" subscripts */
 
-	if (n != 0)
-	{
-		fp = from->p;				/* copy pointers to local registers */
+	if (n != 0) {
+		/* copy pointers to local registers */
+		fp = from->p;
 		fc = from->c;
 		tp = to->p;
 		tc = to->c;
 
-		for (; n > 0; n--)
-		{
-			tp->ch[tc++] = fp->ch[fc++];	/* move one char */
+		for (; n > 0; n--) {
+			/* move one char */
+			tp->ch[tc++] = fp->ch[fc++];
 
-			if (tc > CELLSIZE-1)	/* check current cell done */
-			{
-				if (!tp->f)		/* is there another following? */
-				{
-					tp->f = get_bcell();	/* no, add one */
+			/* check current cell done */
+			if (tc > CELLSIZE-1) {
+				/* is there another following? */
+				if (!tp->f) {
+					/* no, add one */
+					tp->f = get_bcell();
 					tp->f->b = tp;
 				}
 				tp = tp->f;
 				tc = 0;
 			}
 
-			if (fc > CELLSIZE-1)	/* check current cell done */
-			{
-				if (!fp->f)		/* oops, run out of source */
-				{
-					if (n > 1) ERROR(E_UTC);	/* error if not done */
-				}
-				else {
-					fp = fp->f;		/* chain to next cell */
+			/* check current cell done */
+			if (fc > CELLSIZE-1) {
+
+				/* oops, run out of source */
+				if (!fp->f) {
+					/* error if not done */
+					if (n > 1)
+						ERROR(E_UTC);
+				} else {
+					/* chain to next cell */
+					fp = fp->f;
 					fc = 0;
 				}
 			}
 		}
-		from->p = fp;		/* restore arguments */
+
+		/* restore arguments */
+		from->p = fp;
 		to->p = tp;
 		from->c = fc;
 		to->c = tc;
 	}
 }
-moveuntil(from, to, c, n, max, trace)
-struct qp *from, *to;		/* address of buffer pointers	*/
-register char c;			/* match char that ends move	*/
-int *n;						/* pointer to returned value	*/
-int max;					/* limit on chars to move		*/
-int trace;					/* echo characters if nonzero	*/
-{
-	register struct buffcell *fp, *tp;	/* local qpr ".p" pointers	*/
-	register int fc, tc;				/* local qpr ".c" subscripts */
 
-	fp = from->p;				/* copy pointers to local registers */
+moveuntil(from, to, c, n, max, trace)
+	struct qp *from, *to;	/* address of buffer pointers */
+	register char c;	/* match char that ends move */
+	int *n;			/* pointer to returned value */
+	int max;		/* limit on chars to move */
+	int trace;		/* echo characters if nonzero */
+{
+	register struct buffcell *fp, *tp;	/* local qpr ".p" pointers */
+	register int fc, tc;			/* local qpr ".c" subscripts */
+
+	/* copy pointers to local registers */
+	fp = from->p;
 	fc = from->c;
 	tp = to->p;
 	tc = to->c;
 
-	for (*n = 0; fp->ch[fc] != c; (*n)++)	/* until terminating char... */
-	{
-		if (max-- <= 0) ERROR((msp <= &mstack[0]) ? E_UTC : E_UTM);
-		tp->ch[tc++] = fp->ch[fc++];	/* move one char */
-		if (trace) type_char(tp->ch[tc-1]);		/* type it out if trace mode */
+	/* until terminating char... */
+	for (*n = 0; fp->ch[fc] != c; (*n)++) {
+		if (max-- <= 0)
+			ERROR((msp <= &mstack[0]) ? E_UTC : E_UTM);
 
-		if (tc > CELLSIZE-1)	/* check current cell done */
-		{
-			if (!tp->f)		/* is there another following? */
-			{
+		/* move one char */
+		tp->ch[tc++] = fp->ch[fc++];
+
+		/* type it out if trace mode */
+		if (trace)
+			type_char(tp->ch[tc-1]);
+
+		/* check current cell done */
+		if (tc > CELLSIZE-1) {
+			/* is there another following? */
+			if (!tp->f) {
 				tp->f = get_bcell();	/* no, add one */
 				tp->f->b = tp;
 			}
@@ -93,25 +110,29 @@ int trace;					/* echo characters if nonzero	*/
 			tc = 0;
 		}
 
-		if (fc > CELLSIZE-1)	/* check current cell done */
-		{
-			if (!fp->f) ERROR(E_UTC);	 /* oops, run out of source */
+		/* check current cell done */
+		if (fc > CELLSIZE-1) {
+			 /* oops, run out of source */
+			if (!fp->f)
+				ERROR(E_UTC);
 			else {
-				fp = fp->f;		/* chain to next cell */
+				fp = fp->f;	/* chain to next cell */
 				fc = 0;
 			}
 		}
 	}
 
-	from->p = fp;		/* restore arguments */
+	/* restore arguments */
+	from->p = fp;
 	to->p = tp;
 	from->c = fc;
 	to->c = tc;
 }
-
+
 /* routine to get numeric argument */
-int get_value(d)		/* get a value, default is argument */
-int d;
+/* get a value, default is argument */
+get_value(d)
+	int d;
 {
 	int v;
 
@@ -122,105 +143,141 @@ int d;
 	return(v);
 }
 
-
-
-
 /* routine to convert a line count */
 /* returns number of chars between dot and nth line feed */
-
-int lines(arg)
-register int arg;
+lines(arg)
+	register int arg;
 {
 	register int i, c;
 	register struct buffcell *p;
 
-	for (i = dot / CELLSIZE, p = buff.f; (i > 0) && (p->f); i--) p = p->f;	/* find dot */
+	/* find dot */
+	for (i = dot / CELLSIZE, p = buff.f; (i > 0) && (p->f); i--)
+		p = p->f;
 	c = dot % CELLSIZE;
-	if (arg <= 0)				/* scan backwards */
-	{
-		for (i = dot; (arg < 1) && (i > 0); )		/* repeat for each line */
-		{
-			--i;				/* count characters */
-			if (--c < 0)	/* back up the pointer */
-			{
-				if (!(p = p->b)) break;
+
+	/* scan backwards */
+	if (arg <= 0) {
+		/* repeat for each line */
+		for (i = dot; (arg < 1) && (i > 0); ) {
+			/* count characters */
+			--i;
+
+			/* back up the pointer */
+			if (--c < 0) {
+				if (!(p = p->b))
+					break;
 				c = CELLSIZE - 1;
 			}
-			if ( (ez_val & EZ_NOVTFF) ? (p->ch[c] == LF) : (spec_chars[p->ch[c]] & A_L) ) ++arg;	/* if line sep found */
-		}
-		if (arg > 0) ++i;				/* if terminated on a line separator, advance over the separator */
-	}
 
-	else						/* scan forwards */
-	{
-		for (i = dot; (arg > 0) && (i < z); i++)
-		{
-			if ( (ez_val & EZ_NOVTFF) ? (p->ch[c] == LF) : (spec_chars[p->ch[c]] & A_L) ) --arg;
-			if (++c > CELLSIZE-1)
-			{
-				if (!(p = p->f)) break;
+			/* if line sep found */
+			if ( (ez_val & EZ_NOVTFF) ?
+					(p->ch[c] == LF) :
+					(spec_chars[p->ch[c]] & A_L) )
+				++arg;
+		}
+
+		/*
+		 * If terminated on a line separator,
+		 * advance over the separator
+		 */
+		if (arg > 0) ++i;
+	} else {
+
+		/* scan forwards */
+		for (i = dot; (arg > 0) && (i < z); i++) {
+			if ( (ez_val & EZ_NOVTFF) ?
+					(p->ch[c] == LF) :
+					(spec_chars[p->ch[c]] & A_L) )
+				--arg;
+
+			if (++c > CELLSIZE-1) {
+				if (!(p = p->f))
+					break;
 				c = 0;
 			}
-		}			/* this will incr over the separator anyway */
+		}	/* this will incr over the separator anyway */
 	}
 	return(i - dot);
 }
-
-/* routine to handle args for K, T, X, etc.		*/
-/* if two args, 'char x' to 'char y'			*/
-/* if just one arg, then n lines (default 1)	*/
-/* sets a pointer to the beginning of the specd	*/
-/* string, and a char count value				*/
 
-int line_args(d, p)
-int d;					/* nonzero: leave dot at start */
-struct qp *p;
+/*
+ * routine to handle args for K, T, X, etc.
+ * if two args, 'char x' to 'char y'
+ * if just one arg, then n lines (default 1)
+ * sets a pointer to the beginning of the specd
+ * string, and a char count value
+ */
+line_args(d, p)
+	int d;			/* nonzero: leave dot at start */
+	struct qp *p;
 {
 	int n;
 
-	if (esp->flag1 && esp->flag2)		/* if two args */
-	{
-		if (esp->val1 <= esp->val2)		/* in right order */
-		{
-			if (esp->val1 < 0) esp->val1 = 0;
-			if (esp->val2 > z) esp->val2 = z;
-			if (d) dot = esp->val1;		/* update dot */
-			set_pointer(esp->val1, p);	/* set the pointer */
-			esp->flag2 = esp->flag1 = 0;	/* consume arguments */
+	/* if two args */
+	if (esp->flag1 && esp->flag2) {
+
+		/* in right order */
+		if (esp->val1 <= esp->val2) {
+			if (esp->val1 < 0)
+				esp->val1 = 0;
+			if (esp->val2 > z)
+				esp->val2 = z;
+
+			/* update dot */
+			if (d)
+				dot = esp->val1;
+
+			/*
+			 * Set pointer, consume arguments, return count
+			 */
+			set_pointer(esp->val1, p);
+			esp->flag2 = esp->flag1 = 0;
 			esp->op = OP_START;
-			return(esp->val2 - esp->val1);	/* and return the count */
-		}
-		else
-		{
-			if (esp->val2 < 0) esp->val2 = 0;
-			if (esp->val1 > z) esp->val1 = z;
-			if (d) dot = esp->val2;		/* update dot */
-			set_pointer(esp->val2, p);	/* args in reverse order */
-			esp->flag2 = esp->flag1 = 0;	/* consume arguments */
+			return(esp->val2 - esp->val1);
+		} else {
+			if (esp->val2 < 0)
+				esp->val2 = 0;
+			if (esp->val1 > z)
+				esp->val1 = z;
+
+			/* update dot */
+			if (d)
+				dot = esp->val2;
+
+
+			/*
+			 * Use args in reverse order, consume them,
+			 * return
+			 */
+			set_pointer(esp->val2, p);
+			esp->flag2 = esp->flag1 = 0;
 			esp->op = OP_START;
 			return(esp->val1 - esp->val2);
 		}
-	}
-	else
-	{
+	} else {
 		n = lines(get_value(1));
-		if (n < -dot) n = -dot;
-		else if (n > z-dot) n = z-dot;
-		if (n >= 0) set_pointer(dot, p);
-		else
-		{
+		if (n < -dot)
+			n = -dot;
+		else if (n > z-dot)
+			n = z-dot;
+		if (n >= 0)
+			set_pointer(dot, p);
+		else {
 			n = -n;
 			set_pointer(dot - n, p);
-			if (d) dot -= n;
+			if (d)
+				dot -= n;
 		}
 		return(n);
 	}
 }
-
+
 /* convert character c to a q-register spec */
-int getqspec(fors, c)	/* fors ("file or search") nonzero = allow _ or * */
-int fors;
-char c;
+/* fors ("file or search") nonzero = allow _ or * */
+getqspec(fors, c)
+	int fors;
+	char c;
 {
 	if (isdigit(c))
 		return(c - '0' + 1);
@@ -233,92 +290,133 @@ char c;
 	 */
 	else if (c == '#')
 		return(TIMBUF);
-	else if (fors)
-	{
-		if (c == '_') return (SERBUF);
-		if (c == '*') return (FILBUF);
-		if (c == '%') return (SYSBUF);
+	else if (fors) {
+		if (c == '_')
+			return (SERBUF);
+		if (c == '*')
+			return (FILBUF);
+		if (c == '%')
+			return (SYSBUF);
 	}
 	ERROR(E_IQN);
 	/*NOTREACHED*/
 }
 
-
-
-/* routines to do insert operations */
-/* insert1() copies current cell up to dot into a new cell */
-/* leaves bb pointing to end of that text */
-/* insert2() copies rest of buffer */
-
+/*
+ * routines to do insert operations
+ * insert1() copies current cell up to dot into a new cell
+ * leaves bb pointing to end of that text
+ * insert2() copies rest of buffer
+ */
 struct buffcell *insert_p;
-
 insert1()
 {
-	int nchars;				/* number of chars in cell */
+	int nchars;			/* number of chars in cell */
 
-	set_pointer(dot, &aa);	/* convert dot to a qp */
-	if (dot < buff_mod) buff_mod = dot;		/* update earliest char loc touched */
-	insert_p = bb.p = get_bcell();		/* get a new cell */
+	/* convert dot to a qp */
+	set_pointer(dot, &aa);
+
+	/* update earliest char loc touched */
+	if (dot < buff_mod)
+		buff_mod = dot;
+
+	/* get a new cell */
+	insert_p = bb.p = get_bcell();
 	bb.c = 0;
-	nchars = aa.c;			/* save char position of dot in cell */
+	nchars = aa.c;		/* save char position of dot in cell */
 	aa.c = 0;
 
-	/* now aa points to the beginning of the buffer cell that */
-	/* contains dot, bb points to the beginning of a new cell,*/
-	/* nchars is the number of chars before dot */
-
+	/*
+	 * now aa points to the beginning of the buffer cell that
+	 * contains dot, bb points to the beginning of a new cell,
+	 * nchars is the number of chars before dot
+	 */
 	movenchars(&aa, &bb, nchars);	/* copy cell up to dot */
 }
 
-
-
-insert2(count)				/* count is the number of chars added */
-int count;
+/* count is the number of chars added */
+insert2(count)
+	int count;
 {
-	aa.p->b->f = insert_p;		/* put the new cell where the old one was */
+	/* put the new cell where the old one was */
+	aa.p->b->f = insert_p;
 	insert_p->b = aa.p->b;
 	insert_p = NULL;
 
-	bb.p->f = aa.p;			/* splice rest of buffer to end */
+	/* splice rest of buffer to end */
+	bb.p->f = aa.p;
 	aa.p->b = bb.p;
-	movenchars(&aa, &bb, z-dot);	/* squeeze buffer */
-	free_blist(bb.p->f);	/* return unused cells */
-	bb.p->f = NULL;			/* and end the buffer */
-	z += count;				/* add # of chars inserted */
+
+	/* squeeze buffer */
+	movenchars(&aa, &bb, z-dot);
+
+	/* return unused cells */
+	free_blist(bb.p->f);
+
+	/* and end the buffer */
+	bb.p->f = NULL;
+
+	/* add # of chars inserted */
+	z += count;
 	dot += count;
-	ctrl_s = -count;		/* save string length */
+
+	/* save string length */
+	ctrl_s = -count;
 }
-
-/* subroutine to delete n characters starting at dot	*/
-/* argument is number of characters						*/
 
+/*
+ * subroutine to delete n characters starting at dot
+ * argument is number of characters
+ */
 delete1(nchars)
-int nchars;
+	int nchars;
 {
-	if (!nchars) return;		/* 0 chars is a nop */
-	if (nchars < 0)		/* delete negative number of characters? */
-	{
-		nchars = -nchars;			/* make ll positive */
-		if (nchars > dot) ERROR(E_POP);		/* don't delete beyond beg of buffer */
-		dot -= nchars;				/* put pointer before deleted text */
-	}
-	else if (dot + nchars > z) ERROR(E_POP);	/* don't delete beyond end of buffer */
+	/* 0 chars is a nop */
+	if (!nchars)
+		return;
 
-	set_pointer(dot, &aa);			/* pointer to beginning of area to delete */
-	set_pointer(dot+nchars, &bb);	/* and to end */
-	if (dot < buff_mod) buff_mod = dot;		/* update earliest char loc touched */
-	movenchars(&bb, &aa, z-(dot+nchars));	/* move text unless delete ends at z */
-	free_blist(aa.p->f);			/* return any cells after end */
-	aa.p->f = NULL;					/* end the buffer */
-	z -= nchars;					/* adjust z */
+	/* delete negative number of characters? */
+	if (nchars < 0) {
+		/* make ll positive */
+		nchars = -nchars;
+
+		/* don't delete beyond beg of buffer */
+		if (nchars > dot)
+			ERROR(E_POP);
+
+		/* put pointer before deleted text */
+		dot -= nchars;
+	} else if (dot + nchars > z)
+		/* don't delete beyond end of buffer */
+		ERROR(E_POP);
+
+	/* pointer to beginning of area to delete */
+	set_pointer(dot, &aa);
+
+	/* and to end */
+	set_pointer(dot+nchars, &bb);
+
+	/* update earliest char loc touched */
+	if (dot < buff_mod)
+		buff_mod = dot;
+
+	/* move text unless delete ends at z */
+	movenchars(&bb, &aa, z-(dot+nchars));
+
+	/* return any cells after end */
+	free_blist(aa.p->f);
+
+	/* end the buffer */
+	aa.p->f = NULL;
+
+	/* adjust z */
+	z -= nchars;
 }
 
 /*
  * routine to process "O" command
  */
-
 struct qh obuff;		/* tag string buffer */
-
 do_o()
 {
 	int i, j;		/* i used as start of tag, j as end */
@@ -430,13 +528,14 @@ do_o()
 	}		/* end of scan loop */
 }		/* end of subroutine */
 
-/* routine to skip to next ", ', |, <, or >			*/
-/* skips over these chars embedded in text strings	*/
-/* stops in ! if argument is nonzero				*/
-/* returns character found, and leaves it in skipc	*/
-
+/*
+ * routine to skip to next ", ', |, <, or >
+ * skips over these chars embedded in text strings
+ * stops in ! if argument is nonzero
+ * returns character found, and leaves it in skipc
+ */
 char skipto(arg)
-int arg;
+	int arg;
 {
 	int atsw;		/* "at" prefix */
 	char ta, term;		/* temp attributes, terminator */
@@ -523,7 +622,6 @@ again:
 } /* end "skipto()" */
 
 /* find number of characters to next matching (, [, or {  (like '%' in vi) */
-
 do_ctlp()
 {
 	int i, l;
@@ -583,30 +681,31 @@ do_ctlp()
 		break;
 
 	default:
-		esp->val1 = i = 0;		/* not on a matchable char, return 0 */
+		/* not on a matchable char, return 0 */
+		esp->val1 = i = 0;
 	}
 
 	l = 1;			/* start with one unmatched char */
-	if (i > 0)		/* if searching forward */
-	{
-		for (i = dot, fwdc(&aa); (i < z) && (l); fwdc(&aa) )
-		{
+
+	/* if searching forward */
+	if (i > 0) {
+		for (i = dot, fwdc(&aa); (i < z) && (l); fwdc(&aa) ) {
 			++i;
-			if (aa.p->ch[aa.c] == c) --l;
-			else if (aa.p->ch[aa.c] == c1) ++l;
+			if (aa.p->ch[aa.c] == c)
+				--l;
+			else if (aa.p->ch[aa.c] == c1)
+				++l;
 		}
 		esp->val1 = (i < z) ? i - dot : 0;
-	}
-	else if (i < 0)
-	{
-		for (i = dot, backc(&aa); (i >= 0) && (l); backc(&aa) )
-		{
+	} else if (i < 0) {
+		for (i = dot, backc(&aa); (i >= 0) && (l); backc(&aa) ) {
 			--i;
-			if (aa.p->ch[aa.c] == c) --l;
-			else if (aa.p->ch[aa.c] == c1) ++l;
+			if (aa.p->ch[aa.c] == c)
+				--l;
+			else if (aa.p->ch[aa.c] == c1)
+				++l;
 		}
 		esp->val1 = (i >= 0) ? i - dot : 0;
 	}
 	esp->flag1 = 1;
 }
-
