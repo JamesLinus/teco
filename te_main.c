@@ -64,19 +64,19 @@ char *argv[];		/* array of string pointers */
 	get_term_par();
 
 	/* set up error restart */
-	if (err = setjmp(xxx)) {
+	if (terr = setjmp(xxx)) {
 		/* EOF from standard input - clean up and exit */
-		if (err == E_EFI)
+		if (terr == E_EFI)
 			goto quit;
-		printf("\015\012?  %s", errors[err-1]);
+		printf("\015\012?  %s", errors[terr-1]);
 
 		/* print unfulfilled search string */
-		if (err == E_SRH)
+		if (terr == E_SRH)
 			print_string(SERBUF);
 
 		/* or file string */
-		else if ((err == E_FNF) || (err == E_COF) ||
-				(err == E_AMB))
+		else if ((terr == E_FNF) || (terr == E_COF) ||
+				(terr == E_AMB))
 			print_string(FILBUF);
 		crlf();
 

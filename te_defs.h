@@ -267,11 +267,10 @@ extern struct outfiledata po_file, so_file;		/* output file descriptors */
 extern int char_count;					/* char count for tab typer			*/
 extern char lastc;						/* last char read					*/
 extern int ttyerr;						/* error return from ioctl			*/
-extern int errno;						/* system error code				*/
 extern int inp_noterm;					/* nonzero if standard in is not a terminal	*/
 extern int out_noterm;					/* nonzero if standard out is not a term.	*/
 extern jmp_buf xxx;						/* preserved environment for error restart	*/
-extern int err;							/* local error code					*/
+extern int terr;						/* local error code					*/
 extern struct qp t_qp;					/* temporary buffer pointer			*/
 extern struct qp aa, bb, cc;			/* more temporaries					*/
 extern struct buffcell t_bcell;			/* temporary bcell					*/

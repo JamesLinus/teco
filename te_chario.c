@@ -12,7 +12,9 @@
 #include <fcntl.h>
 #ifndef DEBUG
 extern void int_handler();
+#ifdef SIGTSTP
 extern void stp_handler();
+#endif
 extern void hup_handler();
 #define SIGINTMASK 2
 #endif
@@ -26,8 +28,10 @@ struct termios tty_orig, tty_new, tc_noint;
 /* info structure for ^C interrupt */
 struct sigaction intsigstruc = {int_handler, 0, 0 };
 
+#ifdef SIGTSTP
 /* info structure for "stop" signal */
 struct sigaction stpsigstruc = {stp_handler, 0, 0 };
+#endif
 
 /* info structure for "hangup" signal	*/
 struct sigaction hupsigstruc = {hup_handler, 0, 0 };
@@ -49,7 +53,6 @@ static char backpush;	/* Emulate BSD push-back function */
 setup_tty(arg)
 int arg;
 {
-	extern int errno;
 	int ioerr;
 	struct termios tmpbuf;
 
@@ -91,7 +94,9 @@ int arg;
 		tcsetattr(fileno(stdin), TCSAFLUSH, &tty_new);
 #ifndef DEBUG
 		/* Handle signals */
+#ifdef SIGTSTP
 		sigaction(SIGTSTP, &stpsigstruc, 0);
+#endif
 		sigaction(SIGINT, &intsigstruc, 0);
 		sigaction(SIGHUP, &hupsigstruc, 0);
 #endif
@@ -99,7 +104,9 @@ int arg;
 		/* Restore to original state */
 		tcsetattr(fileno(stdin), TCSAFLUSH, &tty_orig);
 #ifndef DEBUG
+#ifdef SIGTSTP
 		sigaction(SIGTSTP, &nosigstr, 0);
+#endif
 		sigaction(SIGINT, &nosigstr, 0);
 		sigaction(SIGHUP, &nosigstr, 0);
 #endif
@@ -247,7 +254,9 @@ int_handler()
 sigset_t oldmask;	/* storage for previous signal mask */
 #define mask(sig) (1L << (sig-1))
 sigset_t intrmask = mask(SIGINT);	/* Mask w. interrupts disabled */
+#ifdef SIGTSTP
 sigset_t suspmask = mask(SIGTSTP);	/* Mask w. ^Z/^Y disabled */
+#endif
 
 block_inter(func)
 int func;
@@ -262,7 +271,7 @@ int func;
 #endif
 }
 
-#ifndef DEBUG
+#if defined(DEBUG) && defined(SIGTSTP)
 /* routine to handle "stop" signal (^Y) */
 void
 stp_handler()

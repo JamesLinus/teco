@@ -8,22 +8,30 @@
  * it is very VT-100 specific, and ought to be rewritten to be general
  */
 #include <signal.h>
+#include <limits.h>
 #ifdef SIGWINCH
+#ifdef VSTA
+#include <termios.h>
+#else /* !VSTA */
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/termios.h>
 #undef TAB
-#endif
+#endif /* !VSTA */
+#endif /* SIGWINCH */
 #include "te_defs.h"
 
+#ifdef VSTA
+#define ospeed 38400
+#else
 extern short ospeed;
+#endif
 
 /* maximum screen height and width (horiz and vert, not height and vidth) */
 #define W_MAX_V 70
 #define W_MAX_H 150
 
 /* maximum positive integer, for "last modified" location */
-#define MAX 0x7fffffff
 #define W_MARK 0200	/* "this loc is special" in screen image */
 
 
@@ -151,7 +159,7 @@ int win_min[]  = {
 
 /* max values */
 int win_max[]  = { 
-	4,  W_MAX_H,	W_MAX_V, 1, MAX, 12, -1,  20 };
+	4,  W_MAX_H,	W_MAX_V, 1, INT_MAX, 12, -1,  20 };
 
 /* window parameters	*/
 int win_data[] = { 
@@ -223,20 +231,31 @@ do_window(ref_flag)
  * (called by main program's initialization)
  */
 #ifdef SIGWINCH
-static struct winsize w;
 void
 recalc_tsize()
 {
-	if (ioctl(2, TIOCGWINSZ, &w) >= 0) {
-		if (!w.ws_row || !w.ws_col)
-			return;
-		WN_height = w.ws_row;
-		WN_width = w.ws_col;
-		window_size = WN_height - WN_scroll;
-		window(WIN_INIT);
-		window(WIN_REDRAW);
-		window(WIN_REFR);
+	int rows, cols;
+
+#ifdef VSTA
+	tcgetsize(2, &rows, &cols);
+#else
+	struct winsize w;
+
+	if (ioctl(2, TIOCGWINSZ, &w) < 0) {
+		return;
 	}
+	if (!w.ws_row || !w.ws_col) {
+		return;
+	}
+	rows = w.ws_row;
+	cols = w.ws_col;
+#endif
+	WN_height = rows;
+	WN_width = cols;
+	window_size = WN_height - WN_scroll;
+	window(WIN_INIT);
+	window(WIN_REDRAW);
+	window(WIN_REFR);
 }
 #else
 recalc_tsize()
@@ -510,7 +529,7 @@ window1()
 	int i, j, m, lflag;
 
 	/* return if nothing has changed */
-	if (!redraw_sw && (dot == last_dot) && (buff_mod == MAX))
+	if (!redraw_sw && (dot == last_dot) && (buff_mod == INT_MAX))
 		return;
 
 	/* disable ^C interrupts */
@@ -698,7 +717,7 @@ window1()
 	fflush(stdout);			/* flush output */
 	WN_origin = wlp[0]->start;	/* save first char pos on screen */
 	redraw_sw = 0;			/* mark screen as updated */
-	buff_mod = MAX;
+	buff_mod = INT_MAX;
 	last_dot = dot;
 	block_inter(0);			/* reenable interrupts */
 }
@@ -756,7 +775,7 @@ int wd;						/* argument is earliest change */
 		;
 
 	/* if the cursor line won't be rewritten */
-	if ((curs_y != temp_y) || (buff_mod == MAX) || curs_crflag) {
+	if ((curs_y != temp_y) || (buff_mod == INT_MAX) || curs_crflag) {
 		/* remove the old cursor */
 		w_rmcurs();
 	}
@@ -771,10 +790,10 @@ int wd;						/* argument is earliest change */
 	w_setptr(wlp[curr_y]->start, &w_p1);
 
 	/* if buffer not modified, redraw only the line with dot */
-	window2(buff_mod == MAX);
+	window2(buff_mod == INT_MAX);
 
 	/* if buffer has changed, erase display lines beyond end of buffer */
-	if (buff_mod < MAX) {
+	if (buff_mod < INT_MAX) {
 		for (curr_x = 0; ++curr_y < window_size; )
 			if ( ((wlp[curr_y]->start >= z) ||
 				(wlp[curr_y]->start <= wlp[curr_y-1]->end)) &&

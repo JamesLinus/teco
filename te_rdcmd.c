@@ -148,9 +148,9 @@ prompt:
 						cbuf.f = NULL;
 
 						/* no previous error */
-						err = 0;
+						terr = 0;
 						goto restart;
-					} else if ((c == '?') && (err))
+					} else if ((c == '?') && (terr))
 					{
 						/*
 						 * Echo previous command
@@ -178,7 +178,7 @@ prompt:
 						type_char('?');
 
 						/* reset error switch */
-						err = 0;
+						terr = 0;
 						goto restart;
 					} else if ((c == LF) ||
 						(c == CTL('H'))) {
@@ -221,7 +221,7 @@ prompt:
 						cbuf.z = 0;
 
 						/* clear last error flag */
-						err = 0;
+						terr = 0;
 					}
 				}	/* end of "if first char on line" */
 
