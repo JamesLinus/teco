@@ -48,6 +48,11 @@ int out_noterm;		/* nonzero if standard output is not a terminal */
 
 static char backpush;	/* Emulate BSD push-back function */
 
+static sigset_t intrmask;	/* Mask w. interrupts disabled */
+#ifdef SIGTSTP
+static sigset_t suspmask;	/* Mask w. ^Z/^Y disabled */
+#endif
+
 /*
  * set tty (stdin) mode.  TECO mode is CBREAK, no ECHO, sep CR & LF
  * operation; normal mode is none of the above.  TTY_OFF and TTY_ON do this
@@ -58,6 +63,20 @@ int arg;
 {
 	int ioerr;
 	struct termios tmpbuf;
+	static int done_init = 0;
+
+	/*
+	 * Establish signal masks for our major modes
+	 */
+	if (!done_init) {
+		sigemptyset(&intrmask);
+		sigaddset(&intrmask, SIGINT);
+#ifdef SIGTSTP
+		sigemptyset(&suspmask);
+		sigaddset(&intrmask, SIGTSTP);
+#endif
+		done_init = 1;
+	}
 
 	/* initial processing: set tty mode */
 
@@ -258,11 +277,6 @@ int_handler()
  * interrupts during display update
  */
 sigset_t oldmask;	/* storage for previous signal mask */
-#define mask(sig) (1L << (sig-1))
-sigset_t intrmask = mask(SIGINT);	/* Mask w. interrupts disabled */
-#ifdef SIGTSTP
-sigset_t suspmask = mask(SIGTSTP);	/* Mask w. ^Z/^Y disabled */
-#endif
 
 block_inter(func)
 int func;
@@ -277,7 +291,7 @@ int func;
 #endif
 }
 
-#if defined(DEBUG) && defined(SIGTSTP)
+#if defined(SIGTSTP)
 /* routine to handle "stop" signal (^Y) */
 void
 stp_handler()

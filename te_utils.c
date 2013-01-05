@@ -15,7 +15,6 @@
 struct buffcell*
 get_bcell()
 {
-	char *malloc();
 	struct buffcell *p;
 	int i;
 
