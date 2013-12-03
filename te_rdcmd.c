@@ -11,333 +11,336 @@ int ccount;				/* count of chars read in */
 
 int read_cmdstr()
 {
-	int c;				/* temporary character */
-	int i;				/* temporary */
+    int c;				/* temporary character */
+    int i;				/* temporary */
 
-	goto prompt;
+    goto prompt;
 
-	/* prompt again: new line */
+    /* prompt again: new line */
 restart:
 
-	/* if input not from a file */
-	if (!eisw && !inp_noterm)
-		crlf();
+    /* if input not from a file */
+    if (!eisw && !inp_noterm) {
+        crlf();
+    }
 
-	/* issue prompt */
+    /* issue prompt */
 prompt:
-	if (!eisw && !inp_noterm) {
-		type_char('*');
-	}
-	ccount = 0;
-	lastc = ' ';
+    if (!eisw && !inp_noterm) {
+        type_char('*');
+    }
+    ccount = 0;
+    lastc = ' ';
 
-	/* loop to read command string chars */
-	for (;;) {
+    /* loop to read command string chars */
+    for (;;) {
 
-		/* if terminal input */
-		if (!eisw && !inp_noterm) {
-			/* process rubout */
-			if ((c = gettty()) == delchar) {
-				/* if at beginning, ignore */
-				if (!ccount)
-					goto restart;
+        /* if terminal input */
+        if (!eisw && !inp_noterm) {
+            /* process rubout */
+            if ((c = gettty()) == delchar) {
+                /* if at beginning, ignore */
+                if (!ccount) {
+                    goto restart;
+                }
 
-				/* decrement char count */
-				--ccount;
+                /* decrement char count */
+                --ccount;
 
-				/* back up the command-string pointer */
-				backc(&cmdstr);
+                /* back up the command-string pointer */
+                backc(&cmdstr);
 
-				/* look at the character just deleted */
-				/* control chars: set c to char erased */
-				if (((c = cmdstr.p->ch[cmdstr.c]) < ' ') &&
-						(c != ESC)) {
+                /* look at the character just deleted */
+                /* control chars: set c to char erased */
+                if (((c = cmdstr.p->ch[cmdstr.c]) < ' ') &&
+                        (c != ESC)) {
 
-					/* line up */
-					if (c == LF)
-						vt(VT_LINEUP);
+                    /* line up */
+                    if (c == LF) {
+                            vt(VT_LINEUP);
 
-					else if ((c == CR) || (c == TAB)) {
+                    } else if ((c == CR) || (c == TAB)) {
 
-						/* back up to previous line */
-						i = find_lasteol();
+                        /* back up to previous line */
+                        i = find_lasteol();
 
-						/* erase current line */
-						type_char(CR);
-						vt(VT_EEOL);
+                        /* erase current line */
+                        type_char(CR);
+                        vt(VT_EEOL);
 
-						/*
-						 * If this was line with
-						 * prompt, retype the prompt
-						 */
-						if (i == ccount)
-							type_char('*');
+                        /*
+                         * If this was line with
+                         * prompt, retype the prompt
+                         */
+                        if (i == ccount) {
+                            type_char('*');
+                        }
 
-						/*
-						 * Retype line: stop before
-						 * deleted position
-						 */
-						for (; (t_qp.p != cmdstr.p) ||
-							(t_qp.c != cmdstr.c);
-							fwdc(&t_qp))
-							type_char(t_qp.p->
-								ch[t_qp.c]);
-					} else {
-						/* erase ordinary ctrl chars */
-						vt(VT_BS2);
-						char_count -= 2;
-					}
-				} else {
-					/* erase printing chars */
-					vt(VT_BS1);
-					char_count--;
-				}
+                        /*
+                         * Retype line: stop before
+                         * deleted position
+                         */
+                        for (; (t_qp.p != cmdstr.p) ||
+                                (t_qp.c != cmdstr.c);
+                                fwdc(&t_qp)) {
+                            type_char(t_qp.p-> ch[t_qp.c]);
+                        }
+                    } else {
+                        /* erase ordinary ctrl chars */
+                        vt(VT_BS2);
+                        char_count -= 2;
+                    }
+                } else {
+                    /* erase printing chars */
+                    vt(VT_BS1);
+                    char_count--;
+                }
 
-				/* disable dangerous last chars */
-				lastc = ' ';
-				continue;
-			} else if (c == CTL('U')) {
-				/* process "erase current line" */
+                /* disable dangerous last chars */
+                lastc = ' ';
+                continue;
+            } else if (c == CTL('U')) {
+                /* process "erase current line" */
 
-				/* erase line */
-				type_char(CR);
-				vt(VT_EEOL);
+                /* erase line */
+                type_char(CR);
+                vt(VT_EEOL);
 
-				/* back up to last eol: if beginning, restart */
-				if ((ccount -= find_lasteol()) <= 0)
-					goto prompt;
+                /* back up to last eol: if beginning, restart */
+                if ((ccount -= find_lasteol()) <= 0) {
+                    goto prompt;
+                }
 
-				/* put command pointer back to this point */
-				cmdstr.p = t_qp.p;
-				cmdstr.c = t_qp.c;
-				lastc = ' ';
+                /* put command pointer back to this point */
+                cmdstr.p = t_qp.p;
+                cmdstr.c = t_qp.c;
+                lastc = ' ';
 
-				/* and read it again */
-				continue;
-			} else {
-				/* not a rubout or ^U */
+                /* and read it again */
+                continue;
+            } else {
+                /* not a rubout or ^U */
 
-				/* if at beginning of line */
-				if (!ccount) {
-					/* save old command string */
-					if (c == '*') {
-						/* echo character */
-						type_char('*');
+                /* if at beginning of line */
+                if (!ccount) {
+                    /* save old command string */
+                    if (c == '*') {
+                        /* echo character */
+                        type_char('*');
 
-						/* read reg spec and echo */
-						type_char(c = gettty());
-						i = getqspec(0, c);
+                        /* read reg spec and echo */
+                        type_char(c = gettty());
+                        i = getqspec(0, c);
 
-						/*
-						 * Return its previous
-						 * contents
-						 */
-						free_blist(qreg[i].f);
+                        /*
+                         * Return its previous
+                         * contents
+                         */
+                        free_blist(qreg[i].f);
 
-						/*
-						 * Put the old command string
-						 * in its place
-						 */
-						qreg[i].f = cbuf.f;
-						qreg[i].f->b =
-							(struct buffcell *)
-							&qreg[i];
-						qreg[i].z = cbuf.z;
+                        /*
+                         * Put the old command string
+                         * in its place
+                         */
+                        qreg[i].f = cbuf.f;
+                        qreg[i].f->b = (struct buffcell *) &qreg[i];
+                        qreg[i].z = cbuf.z;
 
-						/* no old command string */
-						cbuf.f = NULL;
+                        /* no old command string */
+                        cbuf.f = NULL;
 
-						/* no previous error */
-						terr = 0;
-						goto restart;
-					} else if ((c == '?') && (terr))
-					{
-						/*
-						 * Echo previous command
-						 * string up to error
-						 */
+                        /* no previous error */
+                        terr = 0;
+                        goto restart;
 
-						/* echo ? */
-						type_char('?');
+                    } else if ((c == '?') && (terr)) {
+                        /*
+                         * Echo previous command
+                         * string up to error
+                         */
 
-						/* find beginning */
-						for (aa.p = cptr.p;
-							aa.p->b->b != NULL;
-							aa.p = aa.p->b)
-								;
+                        /* echo ? */
+                        type_char('?');
+
+                        /* find beginning */
+                        for (aa.p = cptr.p; aa.p->b->b != NULL;
+                                aa.p = aa.p->b) {
+                            ;
+                        }
 
 
-						for (aa.c = 0;
-							(aa.p != cptr.p) ||
-							(aa.c < cptr.c);
-							fwdc(&aa))
-							 type_char(
-							  aa.p->ch[aa.c]);
+                        for (aa.c = 0; (aa.p != cptr.p) || (aa.c < cptr.c);
+                                fwdc(&aa)) {
+                            type_char(aa.p->ch[aa.c]);
+                        }
 
-						/* a final ? */
-						type_char('?');
+                        /* a final ? */
+                        type_char('?');
 
-						/* reset error switch */
-						terr = 0;
-						goto restart;
-					} else if ((c == LF) ||
-						(c == CTL('H'))) {
+                        /* reset error switch */
+                        terr = 0;
+                        goto restart;
 
-						/* line feed, backspace */
+                    } else if ((c == LF) || (c == CTL('H'))) {
 
-						/*
-						 * Pointer up or down
-						 * one line
-						 */
-						dot += lines( (c == LF) ?
-							1 : -1);
+                        /* line feed, backspace */
 
-						/* display one line */
-						window(WIN_LINE);
-						goto restart;
-					} else {
-						/*
-						 * First real command on
-						 * a line
-						 */
+                        /*
+                         * Pointer up or down
+                         * one line
+                         */
+                        dot += lines( (c == LF) ?  1 : -1);
 
-						/*
-						 * Start a command string if
-						 * need be
-						 */
-						make_buffer(&cbuf);
+                        /* display one line */
+                        window(WIN_LINE);
+                        goto restart;
 
-						/*
-						 * Set cmdstr to point to
-						 * start of command string
-						 */
-						cmdstr.p = cbuf.f;
-						cmdstr.c = 0;
+                    } else {
+                        /*
+                         * First real command on
+                         * a line
+                         */
 
-						/*
-						 * No chars in command string
-						 * now
-						 */
-						cbuf.z = 0;
+                        /*
+                         * Start a command string if
+                         * need be
+                         */
+                        make_buffer(&cbuf);
 
-						/* clear last error flag */
-						terr = 0;
-					}
-				}	/* end of "if first char on line" */
+                        /*
+                         * Set cmdstr to point to
+                         * start of command string
+                         */
+                        cmdstr.p = cbuf.f;
+                        cmdstr.c = 0;
 
-				/* check ^G-something */
+                        /*
+                         * No chars in command string
+                         * now
+                         */
+                        cbuf.z = 0;
 
-				if (lastc == CTL('G')) {
-					if (c == CTL('G')) {
+                        /* clear last error flag */
+                        terr = 0;
+                    }
+                }	/* end of "if first char on line" */
 
-						/*
-						 * Save count for possible
-						 * "save in q-reg"
-						 */
-						cbuf.z = ccount;
-						goto restart;
-					}
-					if ((c == '*') || (c == ' ')) {
-						/*
-						 * Remove the previous ^G
-						 * from buffer
-						 */
-						backc(&cmdstr);
-						--ccount;
-						crlf();
+                /* check ^G-something */
 
-						/*
-						 * Retype appropriate part of
-						 * command string
-						 */
-						retype_cmdstr(c);
-						lastc = ' ';
-						continue;
-					}
-				}
-			}
-		} else
-		{
-			/*
-			 * If input from indirect file or
-			 * redirected std input
-			 */
+                if (lastc == CTL('G')) {
+                    if (c == CTL('G')) {
 
-			/* first command? */
-			if (!ccount) {
+                        /*
+                         * Save count for possible
+                         * "save in q-reg"
+                         */
+                        cbuf.z = ccount;
+                        goto restart;
+                    }
+                    if ((c == '*') || (c == ' ')) {
+                        /*
+                         * Remove the previous ^G
+                         * from buffer
+                         */
+                        backc(&cmdstr);
+                        --ccount;
+                        crlf();
 
-				/* start a command string if need be */
-				if (!cbuf.f) {
-					cbuf.f = get_bcell();
-					cbuf.f->b = (struct buffcell *) &cbuf;
-				}
+                        /*
+                         * Retype appropriate part of
+                         * command string
+                         */
+                        retype_cmdstr(c);
+                        lastc = ' ';
+                        continue;
+                    }
+                }
+            }
+        } else {
+            /*
+             * If input from indirect file or
+             * redirected std input
+             */
 
-				/* point cmdstr to start of command string */
-				cmdstr.p = cbuf.f;
-				cbuf.z = cmdstr.c = 0;
-			}
+            /* first command? */
+            if (!ccount) {
 
-			c = (eisw) ? getc(eisw) : gettty() ;	/* get char */
+                /* start a command string if need be */
+                if (!cbuf.f) {
+                    cbuf.f = get_bcell();
+                    cbuf.f->b = (struct buffcell *) &cbuf;
+                }
 
-			/* if this is end of the indirect command file */
-			if (eisw && (c == EOF)) {
+                /* point cmdstr to start of command string */
+                cmdstr.p = cbuf.f;
+                cbuf.z = cmdstr.c = 0;
+            }
 
-				/* close the input file */
-				fclose(eisw);
+            c = (eisw) ? getc(eisw) : gettty() ;	/* get char */
 
-				/* reset the switch */
-				eisw = 0;
-				lastc = ' ';
+            /* if this is end of the indirect command file */
+            if (eisw && (c == EOF)) {
 
-				/* and go read more chars */
-				continue;
-			} else {
-				if ((c == LF) && (lastc != CR) &&
-						!(ez_val & EZ_CRLF)) {
+                /* close the input file */
+                fclose(eisw);
 
-					/* LF: store implied CR first */
+                /* reset the switch */
+                eisw = 0;
+                lastc = ' ';
 
-					cmdstr.p->ch[cmdstr.c] = CR;
-					++ccount;
-					fwdcx(&cmdstr);
-				}
-			}
-		}		/* end of "if redirected std in or eisw" */
+                /* and go read more chars */
+                continue;
+            } else {
+                if ((c == LF) && (lastc != CR) &&
+                                !(ez_val & EZ_CRLF)) {
 
-		/* store character in command string */
+                    /* LF: store implied CR first */
 
-		/* store the character */
-		cmdstr.p->ch[cmdstr.c] = c;
+                    cmdstr.p->ch[cmdstr.c] = CR;
+                    ++ccount;
+                    fwdcx(&cmdstr);
+                }
+            }
+        }		/* end of "if redirected std in or eisw" */
 
-		/* keep count of chars */
-		++ccount;
+        /* store character in command string */
 
-		/* echo the character */
-		if (!eisw && !inp_noterm)
-			type_char(c);
+        /* store the character */
+        cmdstr.p->ch[cmdstr.c] = c;
 
-		/* next char pos'n; extend command string if nec */
-		fwdcx(&cmdstr);
+        /* keep count of chars */
+        ++ccount;
 
-		/* stop on 2nd ESC */
-		if ((c == ESC) && (lastc == ESC))
-			break;
+        /* echo the character */
+        if (!eisw && !inp_noterm) {
+            type_char(c);
+        }
 
-		/* immediate exit */
-		if ((c == CTL('C')) && (lastc == CTL('C')))
-			return(-1);
+        /* next char pos'n; extend command string if nec */
+        fwdcx(&cmdstr);
 
-		/* keep track of last char */
-		lastc = c;
-	}			/* end of read-char loop */
+        /* stop on 2nd ESC */
+        if ((c == ESC) && (lastc == ESC)) {
+            break;
+        }
 
-	/* indicate number of chars in command string */
-	cbuf.z = ccount;
+        /* immediate exit */
+        if ((c == CTL('C')) && (lastc == CTL('C'))) {
+            return(-1);
+        }
 
-	/* final new-line */
-	if (!eisw && !inp_noterm)
-		crlf();
-	return(0);
+        /* keep track of last char */
+        lastc = c;
+    }			/* end of read-char loop */
+
+    /* indicate number of chars in command string */
+    cbuf.z = ccount;
+
+    /* final new-line */
+    if (!eisw && !inp_noterm) {
+        crlf();
+    }
+    return(0);
 }
 
 /*
@@ -346,50 +349,51 @@ prompt:
  */
 find_lasteol()
 {
-	int i;
+    int i;
 
-	/* look for beg. of line */
-	for (i = 0, t_qp.p = cmdstr.p, t_qp.c = cmdstr.c;
-			(backc(&t_qp)) ; i++) {
-		if ((t_qp.p->ch[t_qp.c] == CR) || (t_qp.p->ch[t_qp.c] == LF)) {
-			fwdc(&t_qp);	/* stop short of previous eol */
-			break;
-		}
-	}
-	char_count = 0;				/* reset tab count */
-	return(i);
+    /* look for beg. of line */
+    for (i = 0, t_qp.p = cmdstr.p, t_qp.c = cmdstr.c;
+            (backc(&t_qp)) ; i++) {
+        if ((t_qp.p->ch[t_qp.c] == CR) || (t_qp.p->ch[t_qp.c] == LF)) {
+            fwdc(&t_qp);	/* stop short of previous eol */
+            break;
+        }
+    }
+    char_count = 0;				/* reset tab count */
+    return(i);
 }
 
 /*
  * retype command string: entirely (arg = '*') or most recent line (arg = ' ')
-*/
+ */
 retype_cmdstr(c)
-	char c;
+    char c;
 {
-	int i;
+    int i;
 
-	/* if input is really from terminal */
-	if (!inp_noterm) {
+    /* if input is really from terminal */
+    if (!inp_noterm) {
 
-		/* look for beginning of this line */
-		if (c == ' ')
+        /* look for beginning of this line */
+        if (c == ' ') {
 
-			/* to last eol, and count char's backed up */
-			i = ccount - find_lasteol();
-		else {
-			/* retype whole command string */
-			t_qp.p = cbuf.f;
-			i = t_qp.c = 0;
-		}
+            /* to last eol, and count char's backed up */
+            i = ccount - find_lasteol();
+        } else {
+            /* retype whole command string */
+            t_qp.p = cbuf.f;
+            i = t_qp.c = 0;
+        }
 
-		/* if from beginning, retype prompt */
-		if (!i)
-			type_char('*');
+        /* if from beginning, retype prompt */
+        if (!i) {
+            type_char('*');
+        }
 
-		/* type command string from starting point */
-		for (; i < ccount; i++) {
-			type_char(t_qp.p->ch[t_qp.c]);
-			fwdc(&t_qp);
-		}
-	}
+        /* type command string from starting point */
+        for (; i < ccount; i++) {
+            type_char(t_qp.p->ch[t_qp.c]);
+            fwdc(&t_qp);
+        }
+    }
 }

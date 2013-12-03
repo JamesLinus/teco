@@ -3,19 +3,20 @@
 /* They may be copied if this copyright notice is included */
 
 /* te_exec2.c   process "E" and "F" commands   2/26/87 */
-#include "te_defs.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "te_defs.h"
 
 struct qh oldcstring;			/* hold command string during ei */
 
 /* file stuff for input/output files */
 
-struct infiledata pi_file = { 
-	NULL, -1 };	/* input files */
-struct infiledata si_file = { 
-	NULL, -1
-};
+/* input files */
+struct infiledata pi_file = { NULL, -1 };
+struct infiledata si_file = { NULL, -1 };
+
 /* pointer to currently active input file structure */
 struct infiledata *infile = &pi_file;
 
@@ -32,308 +33,335 @@ FILE *eisw;
 
 do_e()
 {
-	int c;					/* temps */
-	int old_var;
-	FILE *t_eisw;
+    int c;					/* temps */
+    int old_var;
+    FILE *t_eisw;
 
-	/* read next character and dispatch */
-	switch (mapch_l[getcmdc(trace_sw)]) {	
+    /* read next character and dispatch */
+    switch (mapch_l[getcmdc(trace_sw)]) {	
 
-	/* numeric values */
-	case 'd':				/* ED */
-		set_var(&ed_val);
-		break;
+    /* numeric values */
+    case 'd':				/* ED */
+        set_var(&ed_val);
+        break;
 
-	case 's':				/* ES */
-		set_var(&es_val);
-		break;
+    case 's':				/* ES */
+        set_var(&es_val);
+        break;
 
-	case 't':				/* ET */
-		old_var = et_val;
-		set_var(&et_val);
+    case 't':				/* ET */
+        old_var = et_val;
+        set_var(&et_val);
 
-		/* force read_only bits */
-		et_val = (et_val & 0100651) | 001006;
+        /* force read_only bits */
+        et_val = (et_val & 0100651) | 001006;
 
-		/* redraw if ET & 256 changes */
-		if ((et_val ^ old_var) & ET_TRUNC) window(WIN_REDRAW);
-		break;
+        /* redraw if ET & 256 changes */
+        if ((et_val ^ old_var) & ET_TRUNC) {
+            window(WIN_REDRAW);
+        }
+        break;
 
-	case 'u':				/* EU */
-		set_var(&eu_val);
-		break;
+    case 'u':				/* EU */
+        set_var(&eu_val);
+        break;
 
-	case 'v':				/* EV */
-		set_var(&ev_val);
-		break;
+    case 'v':				/* EV */
+        set_var(&ev_val);
+        break;
 
-	case 'z':				/* EZ */
-		old_var = ez_val;
-		set_var(&ez_val);
-		tabmask = (ez_val & EZ_TAB4) ? 3 : 7;	/* set tab mask */
+    case 'z':				/* EZ */
+        old_var = ez_val;
+        set_var(&ez_val);
+        tabmask = (ez_val & EZ_TAB4) ? 3 : 7;	/* set tab mask */
 
-		/* force window redisplay if EZ_TAB4 changes */
-		if ((ez_val ^ old_var) & EZ_TAB4)
-			window(WIN_REDRAW);
-		break;
+        /* force window redisplay if EZ_TAB4 changes */
+        if ((ez_val ^ old_var) & EZ_TAB4) {
+                window(WIN_REDRAW);
+        }
+        break;
 
-	/* E_ search */
+    /* E_ search */
 
-	case '_':
-		do_nsearch('e');
-		break;
+    case '_':
+        do_nsearch('e');
+        break;
 
-	/* file I/O commands */
+    /* file I/O commands */
 
-	case 'a':				/* set secondary output */
-		outfile = &so_file;
-		break;
+    case 'a':				/* set secondary output */
+        outfile = &so_file;
+        break;
 
-	case 'b':			/* open read/write with backup */
-		/* read the name */
-		if (!read_filename(1, 'r'))
-			ERROR(E_NFI);
+    case 'b':			/* open read/write with backup */
+        /* read the name */
+        if (!read_filename(1, 'r')) {
+            ERROR(E_NFI);
+        }
 
-		/* close previously-open file */
-		if (infile->fd)
-			fclose(infile->fd);
-		if (!(infile->fd = fopen(fbuf.f->ch, "r"))) {
-			if (!colonflag) ERROR(E_FNF);
-		} else {
-			struct stat st;
+        /* close previously-open file */
+        if (infile->fd) {
+                fclose(infile->fd);
+        }
+        if (!(infile->fd = fopen(fbuf.f->ch, "r"))) {
+            if (!colonflag) {
+                ERROR(E_FNF);
+            }
+        } else {
+            struct stat st;
 
-			/* output file already open */
-			if (outfile->fd)
-				ERROR(E_OFO);
+            /* output file already open */
+            if (outfile->fd) {
+                ERROR(E_OFO);
+            }
 
-			/* get modes from original file now */
-			if (fstat(fileno(infile->fd), &st) < 0)
-				st.st_mode = 0600;
+            /* get modes from original file now */
+            if (fstat(fileno(infile->fd), &st) < 0) {
+                st.st_mode = 0600;
+            }
 
-			/* save file string */
-			for (ll = 0; ll < CELLSIZE; ll++)
-				if ((outfile->t_name[ll] =
-					outfile->f_name[ll] =
-					fbuf.f->ch[ll]) == '\0')
-						break;
-			outfile->name_size = ll;
-			outfile->t_name[ll++] = '.';
-			outfile->t_name[ll++] = 't';
-			outfile->t_name[ll++] = 'm';
-			outfile->t_name[ll++] = 'p';
-			outfile->t_name[ll] = '\0';
-			if (!(outfile->fd = fopen(outfile->t_name, "w"))) {
-				if (!colonflag)
-					ERROR(E_COF);
-				else {
-					fclose(infile->fd);
-					infile->fd = NULL;
-				}
-			} else {
-				chmod(outfile->t_name, st.st_mode & 0777);
-				outfile->bak = 1;	/* set backup mode */
-			}
-		}
-		infile->eofsw = -1 - (esp->val1 = (infile->fd) ? -1 : 0);
-		esp->flag1 = colonflag;
-		colonflag = 0;
-		break;
+            /* save file string */
+            for (ll = 0; ll < CELLSIZE; ll++) {
+                if ((outfile->t_name[ll] =
+                        outfile->f_name[ll] =
+                        fbuf.f->ch[ll]) == '\0') {
+                    break;
+                }
+            }
+            outfile->name_size = ll;
+            outfile->t_name[ll++] = '.';
+            outfile->t_name[ll++] = 't';
+            outfile->t_name[ll++] = 'm';
+            outfile->t_name[ll++] = 'p';
+            outfile->t_name[ll] = '\0';
+            if (!(outfile->fd = fopen(outfile->t_name, "w"))) {
+                if (!colonflag) {
+                    ERROR(E_COF);
+                } else {
+                    fclose(infile->fd);
+                    infile->fd = NULL;
+                }
+            } else {
+                chmod(outfile->t_name, st.st_mode & 0777);
+                outfile->bak = 1;	/* set backup mode */
+            }
+        }
+        infile->eofsw = -1 - (esp->val1 = (infile->fd) ? -1 : 0);
+        esp->flag1 = colonflag;
+        colonflag = 0;
+        break;
 
-	case 'x':				/* finish edit and exit */
-		exitflag = -1;
+    case 'x':				/* finish edit and exit */
+        exitflag = -1;
 
-		/* --- fall through to "EC" --- */
+        /* VVV --- fall through to "EC" --- VVV */
 
-	/* finish edit */
-	case 'c':
-		/* set a pointer to start of text buffer */
-		set_pointer(0, &aa);
+    /* finish edit */
+    case 'c':
+        /* set a pointer to start of text buffer */
+        set_pointer(0, &aa);
 
-		/* write the current buffer */
-		write_file(&aa, z, ctrl_e);
+        /* write the current buffer */
+        write_file(&aa, z, ctrl_e);
 
-		/* empty the buffer */
-		dot = z = 0;
+        /* empty the buffer */
+        dot = z = 0;
 
-		/* force window redraw */
-		window(WIN_REDRAW);
+        /* force window redraw */
+        window(WIN_REDRAW);
 
-		/* if any input remaining, copy it to output */
-		if ((outfile->fd) && (infile->fd) && !(infile->eofsw)) {
-			while ((c = getc(infile->fd)) != EOF)
-				putc(c, outfile->fd);
-		}
+        /* if any input remaining, copy it to output */
+        if ((outfile->fd) && (infile->fd) && !(infile->eofsw)) {
+            while ((c = getc(infile->fd)) != EOF) {
+                putc(c, outfile->fd);
+            }
+        }
 
-		/* --- fall through to "EF" --- */
-	case 'f':			/* close output file */
+        /* VVV --- fall through to "EF" --- VVV */
 
-		/* only if one is open */
-		if (outfile->fd) {
-			fclose(outfile->fd);
+    case 'f':			/* close output file */
 
-			/* if this is "backup" mode */
-			if (outfile->bak & 1) {
-				outfile->f_name[outfile->name_size] = '.';
-				outfile->f_name[outfile->name_size+1] = 'b';
-				outfile->f_name[outfile->name_size+2] = 'a';
-				outfile->f_name[outfile->name_size+3] = 'k';
-				outfile->f_name[outfile->name_size+4] = '\0';
-				outfile->t_name[outfile->name_size] = '\0';
+        /* only if one is open */
+        if (outfile->fd) {
+            fclose(outfile->fd);
 
-				/* rename orig file */
-				rename(outfile->t_name, outfile->f_name);
-			}
+            /* if this is "backup" mode */
+            if (outfile->bak & 1) {
+                outfile->f_name[outfile->name_size] = '.';
+                outfile->f_name[outfile->name_size+1] = 'b';
+                outfile->f_name[outfile->name_size+2] = 'a';
+                outfile->f_name[outfile->name_size+3] = 'k';
+                outfile->f_name[outfile->name_size+4] = '\0';
+                outfile->t_name[outfile->name_size] = '\0';
 
-			/* if output file had ".tmp" extension */
-			if (!(outfile->bak & 8)) {								/* remove it */
-				outfile->t_name[outfile->name_size] = '.';
-				outfile->f_name[outfile->name_size] = '\0';
+                /* rename orig file */
+                rename(outfile->t_name, outfile->f_name);
+            }
 
-				/* rename output */
-				rename(outfile->t_name, outfile->f_name);
-			}
-		}
-		outfile->fd = NULL;	/* mark "no output file open" */
-		break;
+            /* if output file had ".tmp" extension */
+            /* remove it */
+            if (!(outfile->bak & 8)) {
+                outfile->t_name[outfile->name_size] = '.';
+                outfile->f_name[outfile->name_size] = '\0';
 
-	case 'i':			/* indirect file execution */
-		/* if no filename specified, reset command input */
-		if (!read_filename(1, 'i')) {
-			/*
-			 * If ending a file execute, restore
-			 * the previous "old command string"
-			 */
-			if (eisw) {
-				/* return the file descriptor */
-				fclose(eisw);
-				eisw = NULL;
+                /* rename output */
+                rename(outfile->t_name, outfile->f_name);
+            }
+        }
+        outfile->fd = NULL;	/* mark "no output file open" */
+        break;
 
-				/*
-				 * return the command string used by
-				 * the file (after execution done)
-				 */
-				dly_free_blist(cbuf.f);
-				cbuf.f = oldcstring.f;
-				cbuf.z = oldcstring.z;
-			}
-			t_eisw = 0;
-		} else if (!(t_eisw = fopen(fbuf.f->ch, "r"))) {
-			if (!colonflag) ERROR(E_FNF);
+    case 'i':			/* indirect file execution */
+        /* if no filename specified, reset command input */
+        if (!read_filename(1, 'i')) {
+            /*
+             * If ending a file execute, restore
+             * the previous "old command string"
+             */
+            if (eisw) {
+                /* return the file descriptor */
+                fclose(eisw);
+                eisw = NULL;
 
-		/* if this "ei" came from the command string */
-		} else if (!eisw) {
-			/* save current command string */
-			oldcstring.f = cbuf.f;
-			oldcstring.z = cbuf.z;
+                /*
+                 * return the command string used by
+                 * the file (after execution done)
+                 */
+                dly_free_blist(cbuf.f);
+                cbuf.f = oldcstring.f;
+                cbuf.z = oldcstring.z;
+            }
+            t_eisw = 0;
 
-			/* and make it inaccessible to "rdcmd" */
-			cbuf.f = NULL;
-		}
+        } else if (!(t_eisw = fopen(fbuf.f->ch, "r"))) {
+            if (!colonflag) {
+                ERROR(E_FNF);
+            }
 
-		/* if a command file had been open, close it */
-		if (eisw) {
-			fclose(eisw);
-		}
-		esp->val1 = (eisw = t_eisw) ? -1 : 0;
-		esp->flag1 = colonflag;
-		colonflag = 0;
-		esp->op = OP_START;
-		break;
-	case 'k':			/* kill output file */
-		kill_output(outfile);
-		break;
+        /* if this "ei" came from the command string */
+        } else if (!eisw) {
+            /* save current command string */
+            oldcstring.f = cbuf.f;
+            oldcstring.z = cbuf.z;
 
-	case 'p':			/* switch to secondary input */
-		infile = &si_file;
-		break;
+            /* and make it inaccessible to "rdcmd" */
+            cbuf.f = NULL;
+        }
 
-	/* specify input file, or switch to primary input */
-	case 'r':
-		/* no name, switch to primary input */
-		if (!read_filename(0, 'r'))
-			infile = &pi_file;
-		else {
-			/* close previously-open file */
-			if (infile->fd)
-				fclose(infile->fd);
-			if (!(infile->fd = fopen(fbuf.f->ch, "r"))) {
-				if (!colonflag)
-					ERROR(E_FNF);
-			}
-		}
-		infile->eofsw = -1 - (esp->val1 = (infile->fd) ? -1 : 0);
-		esp->flag1 = colonflag;
-		colonflag = 0;
-		esp->op = OP_START;
-		break;
+        /* if a command file had been open, close it */
+        if (eisw) {
+            fclose(eisw);
+        }
+        esp->val1 = (eisw = t_eisw) ? -1 : 0;
+        esp->flag1 = colonflag;
+        colonflag = 0;
+        esp->op = OP_START;
+        break;
 
-	case 'w':	/* specify output file, or switch to primary output */
-		if(!read_filename(0, 'w'))
-			outfile = &po_file;
-		else {
-			/* output file already open */
-			if (outfile->fd)
-				ERROR(E_OFO);
+    case 'k':			/* kill output file */
+        kill_output(outfile);
+        break;
 
-			/* save file string */
-			for (ll = 0; ll < CELLSIZE; ll++) {
-				if ((outfile->t_name[ll] =
-					outfile->f_name[ll] =
-					fbuf.f->ch[ll]) == '\0')
-						break;
-			}
-			outfile->name_size = ll;
+    case 'p':			/* switch to secondary input */
+        infile = &si_file;
+        break;
 
-			/* if not using literal output name */
-			if (!(ez_val & EZ_NOTMPFIL)) {
-				/* use provisional suffix ".tmp" */
-				outfile->t_name[ll++] = '.';
-				outfile->t_name[ll++] = 't';
-				outfile->t_name[ll++] = 'm';
-				outfile->t_name[ll++] = 'p';
-				outfile->t_name[ll] = '\0';
-			}
-			if (!(outfile->fd = fopen(outfile->t_name, "w")))
-				if (!colonflag)
-					ERROR(E_COF);
+    /* specify input file, or switch to primary input */
+    case 'r':
+        /* no name, switch to primary input */
+        if (!read_filename(0, 'r')) {
+            infile = &pi_file;
+        } else {
+            /* close previously-open file */
+            if (infile->fd) {
+                    fclose(infile->fd);
+            }
+            if (!(infile->fd = fopen(fbuf.f->ch, "r"))) {
+                if (!colonflag) {
+                    ERROR(E_FNF);
+                }
+            }
+        }
+        infile->eofsw = -1 - (esp->val1 = (infile->fd) ? -1 : 0);
+        esp->flag1 = colonflag;
+        colonflag = 0;
+        esp->op = OP_START;
+        break;
 
-			/* save "temp suffix" status */
-			outfile->bak = ez_val & EZ_NOTMPFIL;
+    case 'w':	/* specify output file, or switch to primary output */
+        if(!read_filename(0, 'w')) {
+                outfile = &po_file;
+        } else {
+            /* output file already open */
+            if (outfile->fd) {
+                ERROR(E_OFO);
+            }
 
-			/* Return status for colon */
-			if (esp->flag1 = colonflag)
-				esp->val1 = (outfile->fd ? -1 : 0);
-		}
-		break;
+            /* save file string */
+            for (ll = 0; ll < CELLSIZE; ll++) {
+                if ((outfile->t_name[ll] =
+                        outfile->f_name[ll] =
+                        fbuf.f->ch[ll]) == '\0') {
+                    break;
+                }
+            }
+            outfile->name_size = ll;
 
-	case 'y':			/* EY is Y without protection */
-		if (esp->flag1)
-			ERROR(E_NYA);
-		dot = z = 0;			/* clear buffer */
-		set_pointer(0, &aa);
-		read_file(&aa, &z, (ed_val & ED_EXPMEM ? -1 : 0) );
-		esp->flag1 = colonflag;
-		colonflag = 0;
-		esp->op = OP_START;
-		break;
-	case 'n':				/* wildcard filespec */
-		esp->val1 = do_en();
-		esp->flag1 = colonflag;
-		colonflag = 0;
-		esp->op = OP_START;
-		break;
+            /* if not using literal output name */
+            if (!(ez_val & EZ_NOTMPFIL)) {
+                /* use provisional suffix ".tmp" */
+                outfile->t_name[ll++] = '.';
+                outfile->t_name[ll++] = 't';
+                outfile->t_name[ll++] = 'm';
+                outfile->t_name[ll++] = 'p';
+                outfile->t_name[ll] = '\0';
+            }
+            if (!(outfile->fd = fopen(outfile->t_name, "w"))) {
+                if (!colonflag) {
+                    ERROR(E_COF);
+                }
+            }
 
-	case 'q':				/* system command */
-		/* do this as a separate routine */
-		esp->val1 = do_eq();
-		esp->flag1 = colonflag;
-		colonflag = 0;
-		esp->op = OP_START;
-		break;
+            /* save "temp suffix" status */
+            outfile->bak = ez_val & EZ_NOTMPFIL;
 
-	default:
-		ERROR(E_IEC);
-	}
+            /* Return status for colon */
+            if (esp->flag1 = colonflag) {
+                esp->val1 = (outfile->fd ? -1 : 0);
+            }
+        }
+        break;
+
+    case 'y':			/* EY is Y without protection */
+        if (esp->flag1) {
+            ERROR(E_NYA);
+        }
+        dot = z = 0;			/* clear buffer */
+        set_pointer(0, &aa);
+        read_file(&aa, &z, (ed_val & ED_EXPMEM ? -1 : 0) );
+        esp->flag1 = colonflag;
+        colonflag = 0;
+        esp->op = OP_START;
+        break;
+
+    case 'n':				/* wildcard filespec */
+        esp->val1 = do_en();
+        esp->flag1 = colonflag;
+        colonflag = 0;
+        esp->op = OP_START;
+        break;
+
+    case 'q':				/* system command */
+        /* do this as a separate routine */
+        esp->val1 = do_eq();
+        esp->flag1 = colonflag;
+        colonflag = 0;
+        esp->op = OP_START;
+        break;
+
+    default:
+        ERROR(E_IEC);
+    }
 }
 
 /*
@@ -344,92 +372,99 @@ do_e()
  */
 do_eq()
 {
-	int t;
-	int status;
-	char *pname;				/* pointer to name of shell */
-	extern char *getenv();
+    int t;
+    int status;
+    char *pname;				/* pointer to name of shell */
+    extern char *getenv();
 
-	build_string(&sysbuf);
+    build_string(&sysbuf);
 
-	/* command must fit within one cell */
-	if (sysbuf.z > CELLSIZE-2)
-		ERROR(E_STL);
+    /* command must fit within one cell */
+    if (sysbuf.z > CELLSIZE-2) {
+        ERROR(E_STL);
+    }
 
-	/* store terminating null */
-	sysbuf.f->ch[sysbuf.z] = '\0';
+    /* store terminating null */
+    sysbuf.f->ch[sysbuf.z] = '\0';
 
-	/* read shell name */
-	if (!(pname = getenv("SHELL")))
-		ERROR(E_SYS);
+    /* read shell name */
+    if (!(pname = getenv("SHELL"))) {
+        ERROR(E_SYS);
+    }
 
-	/* if not m,nEQ command */
-	if (!esp->flag1) {
-		/* restore full screen */
-		if (win_data[7])
-			window(WIN_SUSP);
+    /* if not m,nEQ command */
+    if (!esp->flag1) {
+        /* restore full screen */
+        if (win_data[7]) {
+            window(WIN_SUSP);
+        }
 
-		/* force characters out */
-		crlf();
+        /* force characters out */
+        crlf();
 
-		/* restore terminal to normal mode */
-		setup_tty(TTY_SUSP);
+        /* restore terminal to normal mode */
+        setup_tty(TTY_SUSP);
 
-		/* fork a new process */
-		t = fork();
+        /* fork a new process */
+        t = fork();
 
-		/* if this is the child */
-		if (t == 0) {
-			/* call the named Unix routine */
-			execl(pname, pname, "-c", &sysbuf.f->ch[0], 0);
+        /* if this is the child */
+        if (t == 0) {
+            /* call the named Unix routine */
+            execl(pname, pname, "-c", &sysbuf.f->ch[0], 0);
 
-			/* normally shouldn't get here */
-			printf("Error in 'execl'\n");
-			exit(1);
-		}
+            /* normally shouldn't get here */
+            printf("Error in 'execl'\n");
+            exit(1);
+        }
 
-		/* if parent, wait for child to finish */
-		while (wait(&status) != t)
-			;
+        /* if parent, wait for child to finish */
+        while (wait(&status) != t) {
+            ;
+        }
 
-		/* keep failure indication from child */
-		if (status & 0xFF)
-			t = -1;
+        /* keep failure indication from child */
+        if (status & 0xFF) {
+            t = -1;
+        }
 
-		/* restore terminal to teco mode */
-		setup_tty(TTY_RESUME);
+        /* restore terminal to teco mode */
+        setup_tty(TTY_RESUME);
 
-		/* if window was enabled */
-		if (win_data[7]) {
-			/* set reverse video */
-			vt(VT_SETSPEC1);
+        /* if window was enabled */
+        if (win_data[7]) {
+            /* set reverse video */
+            vt(VT_SETSPEC1);
 
-			/* require CR before continuing */
-			fputs("Type RETURN to continue", stdout);
+            /* require CR before continuing */
+            fputs("Type RETURN to continue", stdout);
 
-			/* reverse video off */
-			vt(VT_CLRSPEC);
+            /* reverse video off */
+            vt(VT_CLRSPEC);
 
-			while (gettty() != LF)
-				;
+            while (gettty() != LF) {
+                ;
+            }
 
-			/* back to beginning of line */
-			putchar(CR);
+            /* back to beginning of line */
+            putchar(CR);
 
-			/* and erase the message */
-			vt(VT_EEOL);
+            /* and erase the message */
+            vt(VT_EEOL);
 
-			/* re-enable window */
-			window(WIN_RESUME);
+            /* re-enable window */
+            window(WIN_RESUME);
 
-			/* and make it redraw afterwards */
-			window(WIN_REDRAW);
-		}
-	} else
-		/* m,nEQ command */
-		t = do_eq1(pname);
+            /* and make it redraw afterwards */
+            window(WIN_REDRAW);
+        }
+    } else {
+        /* m,nEQ command */
+        t = do_eq1(pname);
+    }
 
-	/* return failure if fork failed or proc status nonzero */
-	return( (t == -1) ? 0 : -1);
+    /* return failure if fork failed or proc status nonzero */
+    return( (t == -1) ? 0 : -1);
 }
 
 /*
@@ -440,140 +475,145 @@ do_eq()
 do_eq1(shell)
 char *shell;			/* arg is pointer to shell name */
 {
-	int ff, pipe_in[2],
-		pipe_out[2];		/* fork result and two pipes */
-	FILE *xx_in, *xx_out;		/* std in and out for called process */
-	FILE *fdopen();
-	int status;
+    int ff, pipe_in[2],
+            pipe_out[2];		/* fork result and two pipes */
+    FILE *xx_in, *xx_out;		/* std in and out for called process */
+    FILE *fdopen();
+    int status;
 
-	/* set aa to start of text, ll to number of chars */
-	ll = line_args(1, &aa);
+    /* set aa to start of text, ll to number of chars */
+    ll = line_args(1, &aa);
 
-	/* set pointer at end of text */
-	dot += ll;
+    /* set pointer at end of text */
+    dot += ll;
 
-	/* set ^S to - # of chars */
-	ctrl_s = -ll;
+    /* set ^S to - # of chars */
+    ctrl_s = -ll;
 
-	/* make input pipe; failure if can't */
-	if (pipe(pipe_out))
-		ERROR(E_SYS);
+    /* make input pipe; failure if can't */
+    if (pipe(pipe_out)) {
+        ERROR(E_SYS);
+    }
 
-	/* disable split screen */
-	if (win_data[7])
-		window(WIN_SUSP);
+    /* disable split screen */
+    if (win_data[7]) {
+        window(WIN_SUSP);
+    }
 
-	/* put console back to original state */
-	setup_tty(TTY_SUSP);
+    /* put console back to original state */
+    setup_tty(TTY_SUSP);
 
-	/* fork first child: if error, quit */
-	if ((ff = fork()) == -1) {
-		close(pipe_out[0]);
-		close(pipe_out[1]);
-		setup_tty(TTY_RESUME);
-		if (win_data[7]) {
-			window(WIN_RESUME);
-			window(WIN_REDRAW);
-		}
-		ERROR(E_SYS);
-	}
+    /* fork first child: if error, quit */
+    if ((ff = fork()) == -1) {
+        close(pipe_out[0]);
+        close(pipe_out[1]);
+        setup_tty(TTY_RESUME);
+        if (win_data[7]) {
+            window(WIN_RESUME);
+            window(WIN_REDRAW);
+        }
+        ERROR(E_SYS);
+    }
 
-	/* if this is the parent, the task is to read into q# */
-	if (ff) {
-		make_buffer(&timbuf);	/* initialize the q# header */
-		bb.p = timbuf.f;	/* init bb to point to q# */
-		timbuf.z = bb.c = 0;
+    /* if this is the parent, the task is to read into q# */
+    if (ff) {
+        make_buffer(&timbuf);	/* initialize the q# header */
+        bb.p = timbuf.f;	/* init bb to point to q# */
+        timbuf.z = bb.c = 0;
 
-		/* parent won't write to this pipe */
-		close(pipe_out[1]);
+        /* parent won't write to this pipe */
+        close(pipe_out[1]);
 
-		/* open the "std out" pipe for reading */
-		if ((xx_out = fdopen(pipe_out[0], "r")) == 0) {
-			close(pipe_out[0]);	/* if can't open output pipe */
-			setup_tty(TTY_RESUME);
-			if (win_data[7]) {
-				window(WIN_RESUME);
-				window(WIN_REDRAW);
-			}
-			ERROR(E_SYS);		/* "open" failure */
-		}
+        /* open the "std out" pipe for reading */
+        if ((xx_out = fdopen(pipe_out[0], "r")) == 0) {
+            close(pipe_out[0]);	/* if can't open output pipe */
+            setup_tty(TTY_RESUME);
+            if (win_data[7]) {
+                window(WIN_RESUME);
+                window(WIN_REDRAW);
+            }
+            ERROR(E_SYS);		/* "open" failure */
+        }
 
-		/* read from pipe to q# */
-		read_stream(xx_out, 0, &bb, &timbuf.z, 0, 0, 1);
-		close(pipe_out[0]);
+        /* read from pipe to q# */
+        read_stream(xx_out, 0, &bb, &timbuf.z, 0, 0, 1);
+        close(pipe_out[0]);
 
-		/* wait for children to finish */
-		while (wait(&status) != ff)
-			;
-		setup_tty(TTY_RESUME);
-		if (win_data[7]) {
-			window(WIN_RESUME);
-			window(WIN_REDRAW);
-		}
-		return((status & 0xFF) ? -1 : 0);
-	}
+        /* wait for children to finish */
+        while (wait(&status) != ff) {
+            ;
+        }
+        setup_tty(TTY_RESUME);
+        if (win_data[7]) {
+            window(WIN_RESUME);
+            window(WIN_REDRAW);
+        }
+        return((status & 0xFF) ? -1 : 0);
+    }
 
-	/*
-	 * This is the child.  It in turn forks into two processes, of which
-	 * the "parent" (original child) writes the specified part of the
-	 * buffer to the pipe, and the new child (grandchild to the original
-	 * teco) execl's the Unix command.
-	 */
+    /*
+     * This is the child.  It in turn forks into two processes, of which
+     * the "parent" (original child) writes the specified part of the
+     * buffer to the pipe, and the new child (grandchild to the original
+     * teco) execl's the Unix command.
+     */
 
-	else {
-		/* won't read from "output" pipe */
-		close(pipe_out[0]);
+    /* won't read from "output" pipe */
+    close(pipe_out[0]);
 
-		/* make the "std in" pipe for the process, quit if can't */
-		if (pipe(pipe_in))
-			exit(1);
+    /* make the "std in" pipe for the process, quit if can't */
+    if (pipe(pipe_in)) {
+        exit(1);
+    }
 
-		/* fork to two processes (total 3), exit if error */
-		if ((ff = fork()) == -1)
-			exit(1);
+    /* fork to two processes (total 3), exit if error */
+    if ((ff = fork()) == -1) {
+        exit(1);
+    }
 
-		/* parent - will send chars */
-		if (ff) {
-			close(pipe_in[0]);	/* won't read from this pipe */
+    /* parent - will send chars */
+    if (ff) {
+        close(pipe_in[0]);	/* won't read from this pipe */
 
-			/* open pipe for writing; exit if open fails */
+        /* open pipe for writing; exit if open fails */
 
-			if ((xx_in = fdopen(pipe_in[1], "w")) == 0)
-				exit(1);
+        if ((xx_in = fdopen(pipe_in[1], "w")) == 0) {
+            exit(1);
+        }
 
-			/* write to stream, CRLF becomes LF */
-			write_stream(xx_in, &aa, ll, 0);
-			fclose(xx_in);
+        /* write to stream, CRLF becomes LF */
+        write_stream(xx_in, &aa, ll, 0);
+        fclose(xx_in);
 
-			/* wait for child */
-			while (wait(&status) != ff)
-				;
+        /* wait for child */
+        while (wait(&status) != ff) {
+            ;
+        }
 
-			/* exit with child's status */
-			exit(status & 0xFF);
-		} else {
-			/* this process is the grandchild */
+        /* exit with child's status */
+        exit(status & 0xFF);
 
-			/* close "input" for writing */
-			close(pipe_in[1]);
+    }
 
-			/* substitute pipe_in for stdin */
-			dup2(pipe_in[0], fileno(stdin));
+    /* this process is the grandchild */
 
-			/* and pipe_out for stdout	*/
-			dup2(pipe_out[1], fileno(stdout));
+    /* close "input" for writing */
+    close(pipe_in[1]);
 
-			/* close original descriptors */
-			close(pipe_in[0]);
-			close(pipe_out[1]);
+    /* substitute pipe_in for stdin */
+    dup2(pipe_in[0], fileno(stdin));
 
-			/* execute specified routine */
-			execl(shell, shell, "-c", &sysbuf.f->ch[0], 0);
-			fputs("execl failed\n", stderr);
-			exit(1);
-		}
-		/*NOTREACHED*/
-	}
+    /* and pipe_out for stdout	*/
+    dup2(pipe_out[1], fileno(stdout));
+
+    /* close original descriptors */
+    close(pipe_in[0]);
+    close(pipe_out[1]);
+
+    /* execute specified routine */
+    execl(shell, shell, "-c", &sysbuf.f->ch[0], 0);
+    fputs("execl failed\n", stderr);
+    exit(1);
 }
 
 /*
@@ -586,41 +626,45 @@ char *shell;			/* arg is pointer to shell name */
 struct qh en_buf;		/* header for storage for file list */
 struct qp en_ptr;		/* pointer to load/read file list */
 static char glob_cmd0[] = {
-	'g', 'l', 'o', 'b', ' '
+    'g', 'l', 'o', 'b', ' '
 };
 
-do_en(){
-	int t;
+do_en()
+{
+    int t;
 
-	/* if a file string is specified */
-	if (build_string(&fbuf)) {
+    /* if a file string is specified */
+    if (build_string(&fbuf)) {
 
-		/* upper limit on string length */
-		if (fbuf.z > CELLSIZE-2)
-			ERROR(E_STL);
+        /* upper limit on string length */
+        if (fbuf.z > CELLSIZE-2) {
+            ERROR(E_STL);
+        }
 
-		/* terminating null */
-		fbuf.f->ch[fbuf.z] = '\0';
+        /* terminating null */
+        fbuf.f->ch[fbuf.z] = '\0';
 
-		/* glob the result */
-		t = do_glob(&en_buf);
+        /* glob the result */
+        t = do_glob(&en_buf);
 
-		/* set the buffer pointer to the beginning of the buffer */
-		en_ptr.p = en_buf.f;
-		en_ptr.dot = en_ptr.c = 0;
-	} else {
+        /* set the buffer pointer to the beginning of the buffer */
+        en_ptr.p = en_buf.f;
+        en_ptr.dot = en_ptr.c = 0;
 
-		/* if no string, get next filename */
-		do_en_next();
+    } else {
 
-		/* t zero if no more filespecs */
-		t = (fbuf.z) ? -1 : 0;
+        /* if no string, get next filename */
+        do_en_next();
 
-		/* if no colon, end of spec is an error */
-		if (!t && !colonflag)
-			ERROR(E_NFI);
-	}
-	return (t);
+        /* t zero if no more filespecs */
+        t = (fbuf.z) ? -1 : 0;
+
+        /* if no colon, end of spec is an error */
+        if (!t && !colonflag) {
+            ERROR(E_NFI);
+        }
+    }
+    return (t);
 }
 
 /*
@@ -629,131 +673,137 @@ do_en(){
  * argument->v gets set to the number of file specs found
  */
 do_glob(lbuff)
-	struct qh *lbuff;
+    struct qh *lbuff;
 {
-	char glob_cmd[CELLSIZE+5];	/* "glob filespec" command string */
-	int t;
-	int c;
-	int glob_pipe[2];		/* pipe to shell for filenames */
-	struct qp glob_ptr;		/* pointer for result buffer */
-	FILE *xx_out;			/* stream for chars from pipe */
-	FILE *fdopen();
-	int status;
+    char glob_cmd[CELLSIZE+5];	/* "glob filespec" command string */
+    int t;
+    int c;
+    int glob_pipe[2];		/* pipe to shell for filenames */
+    struct qp glob_ptr;		/* pointer for result buffer */
+    FILE *xx_out;			/* stream for chars from pipe */
+    FILE *fdopen();
+    int status;
 
-	/* initialize expanded file buffer */
-	make_buffer(lbuff);
+    /* initialize expanded file buffer */
+    make_buffer(lbuff);
 
-	/* initialize pointer to buffer */
-	glob_ptr.p = lbuff->f;
-	glob_ptr.c = glob_ptr.dot = lbuff->z = lbuff->v = 0;
+    /* initialize pointer to buffer */
+    glob_ptr.p = lbuff->f;
+    glob_ptr.c = glob_ptr.dot = lbuff->z = lbuff->v = 0;
 
-	/* set up "glob filespec" command */
-	for (t = 0; t < 5; t++)
-		glob_cmd[t] = glob_cmd0[t];
-	for (t = 0; t < fbuf.z +1; t++)
-		glob_cmd[t+5] = fbuf.f->ch[t];
+    /* set up "glob filespec" command */
+    for (t = 0; t < 5; t++) {
+        glob_cmd[t] = glob_cmd0[t];
+    }
+    for (t = 0; t < fbuf.z +1; t++) {
+        glob_cmd[t+5] = fbuf.f->ch[t];
+    }
 
-	/* make a pipe */
-	if (pipe(glob_pipe))
-		ERROR(E_SYS);
+    /* make a pipe */
+    if (pipe(glob_pipe)) {
+        ERROR(E_SYS);
+    }
 
-	/* put console back to normal */
-	setup_tty(TTY_SUSP);
+    /* put console back to normal */
+    setup_tty(TTY_SUSP);
 
-	/* spawn a child... if failure */
-	if ((t = fork()) == -1) {
-		close(glob_pipe[0]);		/* undo the pipe */
-		close(glob_pipe[1]);
-		setup_tty(TTY_RESUME);
-		ERROR(E_SYS);			/* and exit with failure */
-	}
+    /* spawn a child... if failure */
+    if ((t = fork()) == -1) {
+        close(glob_pipe[0]);		/* undo the pipe */
+        close(glob_pipe[1]);
+        setup_tty(TTY_RESUME);
+        ERROR(E_SYS);			/* and exit with failure */
+    }
 
-	/* if this is the parent */
-	if (t) {
-		close(glob_pipe[1]);		/* parent won't write */
+    /* if this is the parent */
+    if (t) {
+        close(glob_pipe[1]);		/* parent won't write */
 
-		/* open pipe for read */
-		if ((xx_out = fdopen(glob_pipe[0], "r")) == 0) {
+        /* open pipe for read */
+        if ((xx_out = fdopen(glob_pipe[0], "r")) == 0) {
 
-			/* failure to open */
-			close(glob_pipe[0]);
-			setup_tty(TTY_RESUME);
-			ERROR(E_SYS);
-		}
+            /* failure to open */
+            close(glob_pipe[0]);
+            setup_tty(TTY_RESUME);
+            ERROR(E_SYS);
+        }
 
-		/* read characters from pipe */
-		while ((c = getc(xx_out)) != EOF) {
+        /* read characters from pipe */
+        while ((c = getc(xx_out)) != EOF) {
 
-			/* count null chars that separate file specs */
-			if (c == '\0')
-				++lbuff->v;
+            /* count null chars that separate file specs */
+            if (c == '\0') {
+                ++lbuff->v;
+            }
 
-			/* store them in buffer */
-			glob_ptr.p->ch[glob_ptr.c] = c;
-			fwdcx(&glob_ptr);
-		}
+            /* store them in buffer */
+            glob_ptr.p->ch[glob_ptr.c] = c;
+            fwdcx(&glob_ptr);
+        }
 
-		/* through with stream */
-		fclose(xx_out);
+        /* through with stream */
+        fclose(xx_out);
 
-		/* save character count */
-		lbuff->z = glob_ptr.dot;
+        /* save character count */
+        lbuff->z = glob_ptr.dot;
 
-		/* wait for child to finish */
-		while (wait(&status) != t)
-			;
-		setup_tty(TTY_RESUME);
+        /* wait for child to finish */
+        while (wait(&status) != t) {
+                ;
+        }
+        setup_tty(TTY_RESUME);
 
-		/* return success unless child exited nonzero */
-		return((status & 0xFF) ? 0 : -1);
-	} else {
-		/* this is the child */
+        /* return success unless child exited nonzero */
+        return((status & 0xFF) ? 0 : -1);
+    }
 
-		/* child won't read */
-		close(glob_pipe[0]);
+    /* this is the child */
 
-		/* substitute pipe for standard out */
-		dup2(glob_pipe[1], fileno(stdout));
+    /* child won't read */
+    close(glob_pipe[0]);
 
-		/* don't need that anymore */
-		close(glob_pipe[1]);
+    /* substitute pipe for standard out */
+    dup2(glob_pipe[1], fileno(stdout));
 
-		/* execute the "glob" */
-		execl("/bin/csh", "csh", "-fc", glob_cmd, 0);
-		fputs("execl failed\n", stderr);
-		exit(1);
-		/*NOTREACHED*/
-	}
+    /* don't need that anymore */
+    close(glob_pipe[1]);
+
+    /* execute the "glob" */
+    execl("/bin/csh", "csh", "-fc", glob_cmd, 0);
+    fputs("execl failed\n", stderr);
+    exit(1);
 }
 
 /* routine to get next file spec from "EN" list into filespec buffer */
-
 do_en_next()
 {
-	char c;
+    char c;
 
-	/* initialize the filespec buffer */
-	make_buffer(&fbuf);
-	fbuf.z = 0;
+    /* initialize the filespec buffer */
+    make_buffer(&fbuf);
+    fbuf.z = 0;
 
-	/* stop at end of string */
-	while(en_ptr.dot < en_buf.z) {
-		c = en_ptr.p->ch[en_ptr.c];
-		fwdc(&en_ptr);
+    /* stop at end of string */
+    while (en_ptr.dot < en_buf.z) {
+        c = en_ptr.p->ch[en_ptr.c];
+        fwdc(&en_ptr);
 
-		/* null is terminator between file specs */
-		if (!c) break;
+        /* null is terminator between file specs */
+        if (!c) {
+            break;
+        }
 
-		/* store char */
-		fbuf.f->ch[fbuf.z++] = c;
+        /* store char */
+        fbuf.f->ch[fbuf.z++] = c;
 
-		/* limit on filespec size */
-		if (fbuf.z >= CELLSIZE-1)
-			ERROR(E_STL);
-	}
+        /* limit on filespec size */
+        if (fbuf.z >= CELLSIZE-1) {
+            ERROR(E_STL);
+        }
+    }
 
-	/* filespec ends with NULL */
-	fbuf.f->ch[fbuf.z] = '\0';
+    /* filespec ends with NULL */
+    fbuf.f->ch[fbuf.z] = '\0';
 }
 
 /*
@@ -767,110 +817,117 @@ read_filename(flag, func)
 int flag;
 char func;
 {
-	int i, t, expand;
-	char c;
-	struct qh temp_buff;		/* temp buffer for globbing filespec */
+    int i, t, expand;
+    char c;
+    struct qh temp_buff;		/* temp buffer for globbing filespec */
 
-	/* if no name spec'd */
-	if (!(t = build_string(&fbuf))) {
-		/* if no name spec'd, set length to 0 */
-		if (flag)
-			fbuf.z = 0;
-	} else {
-		if (fbuf.z > CELLSIZE-2)
-			ERROR(E_STL);
+    /* if no name spec'd */
+    if (!(t = build_string(&fbuf))) {
+        /* if no name spec'd, set length to 0 */
+        if (flag) {
+            fbuf.z = 0;
+        }
+        return(0);
+    }
 
-		/* store terminating NULL */
-		fbuf.f->ch[fbuf.z] = '\0';
+    if (fbuf.z > CELLSIZE-2) {
+        ERROR(E_STL);
+    }
 
-		/* check for characters to be expanded by the shell */
+    /* store terminating NULL */
+    fbuf.f->ch[fbuf.z] = '\0';
 
-		for (i = 0; i < fbuf.z; i++)
-			if ((c = fbuf.f->ch[i]) == '*' || c == '?' ||
-					c == '[' || c == 0173)
-				break;
+    /* check for characters to be expanded by the shell */
 
-		/* one of these was found, or first char is ~ */
-		if ( (expand = (i < fbuf.z)) || fbuf.f->ch[0] == '~') {
+    for (i = 0; i < fbuf.z; i++) {
+        if ((c = fbuf.f->ch[i]) == '*' || c == '?' ||
+                c == '[' || c == 0173) {
+            break;
+        }
+    }
 
-			/* make a temp buffer to glob filename into */
-			temp_buff.f = NULL;
-			make_buffer(temp_buff);
+    /* one of these was found, or first char is ~ */
+    if ( (expand = (i < fbuf.z)) || fbuf.f->ch[0] == '~') {
 
-			/* expand the file name */
-			do_glob(&temp_buff);
+        /* make a temp buffer to glob filename into */
+        temp_buff.f = NULL;
+        make_buffer(temp_buff);
 
-			/* no match */
-			if (temp_buff.z == 0) {
-				/* return the storage */
-				free_blist(temp_buff.f);
+        /* expand the file name */
+        do_glob(&temp_buff);
 
-				/* "can't open" or "file not found" */
-				ERROR(func == 'w' ? E_COF : E_FNF);
-			} else if (temp_buff.v == 0) {
-				/* if exactly one file name */
+        /* no match */
+        if (temp_buff.z == 0) {
+            /* return the storage */
+            free_blist(temp_buff.f);
 
-				/* return the old file spec */
-				free_blist(fbuf.f);
+            /* "can't open" or "file not found" */
+            ERROR(func == 'w' ? E_COF : E_FNF);
+        } else if (temp_buff.v == 0) {
+            /* if exactly one file name */
 
-				/* put the temp buffer there instead */
-				fbuf.f = temp_buff.f;
-				fbuf.z = temp_buff.z;
-				if (fbuf.z > CELLSIZE-2)
-					ERROR(E_STL);
-				fbuf.f->ch[fbuf.z] = '\0';
+            /* return the old file spec */
+            free_blist(fbuf.f);
 
-				/*
-				 * if this is EW and 'twas from a
-				 * wildcard expansion
-				 */
-				if (func == 'w' && expand) {
+            /* put the temp buffer there instead */
+            fbuf.f = temp_buff.f;
+            fbuf.z = temp_buff.z;
+            if (fbuf.z > CELLSIZE-2)
+                    ERROR(E_STL);
+            fbuf.f->ch[fbuf.z] = '\0';
 
-					/*
-					 * "file XXXX already exists:
-					 * overwrite? [yn]"
-					 */
-					vt(VT_SETSPEC1);
-					fputs("File ", stdout);
-					fputs(fbuf.f->ch, stdout);
-			fputs(" already exists: overwrite? [ny] ", stdout);
-					vt(VT_CLRSPEC);
+            /*
+             * if this is EW and 'twas from a
+             * wildcard expansion
+             */
+            if (func == 'w' && expand) {
 
-					/* read user's response */
-					c = gettty();
-					putchar(CR);
+                /*
+                 * "file XXXX already exists:
+                 * overwrite? [yn]"
+                 */
+                vt(VT_SETSPEC1);
+                fputs("File ", stdout);
+                fputs(fbuf.f->ch, stdout);
+                fputs(" already exists: overwrite? [ny] ", stdout);
+                vt(VT_CLRSPEC);
 
-					/* clean up the screen */
-					vt(VT_EEOL);
+                /* read user's response */
+                c = gettty();
+                putchar(CR);
 
-					/* abort here */
-					if (c != 'y') ERROR(E_COF);
-				}
-			} else {
-				/* multiple file specs */
+                /* clean up the screen */
+                vt(VT_EEOL);
 
-				/* if multiple file specs here aren't allowed */
-				if (func != 'r' || !(ez_val & EZ_MULT)) {
+                /* abort here */
+                if (c != 'y') {
+                    ERROR(E_COF);
+                }
+            }
+        } else {
+            /* multiple file specs */
 
-					/* return the storage */
-					free_blist(temp_buff.f);
-					ERROR(E_AMB);
-				}
+            /* if multiple file specs here aren't allowed */
+            if (func != 'r' || !(ez_val & EZ_MULT)) {
 
-				/* substitute the expansion for the "EN" list */
-				free_blist(en_buf.f);
+                /* return the storage */
+                free_blist(temp_buff.f);
+                ERROR(E_AMB);
+            }
 
-				/* and initialize the "EN" list pointer */
-				en_ptr.p = en_buf.f = temp_buff.f;
-				en_buf.z = temp_buff.z;
-				en_ptr.dot = en_ptr.c = 0;
+            /* substitute the expansion for the "EN" list */
+            free_blist(en_buf.f);
 
-				/* get the first file */
-				do_en_next();
-			}
-		}
-	}
-	return(t);
+            /* and initialize the "EN" list pointer */
+            en_ptr.p = en_buf.f = temp_buff.f;
+            en_buf.z = temp_buff.z;
+            en_ptr.dot = en_ptr.c = 0;
+
+            /* get the first file */
+            do_en_next();
+        }
+    }
+    return(t);
 }
 
 
@@ -880,21 +937,22 @@ char func;
 set_var(arg)
 int *arg;			/* argument is pointer to variable */
 {
-	/* if an argument, then set the variable */
-	if (esp->flag1) {
-		/* if two arguments, then <clr>, <set> */
-		if (esp->flag2)
-			*arg = (*arg & ~esp->val2) | esp->val1;
-		else
-			/* one arg is new value */
-			*arg = esp->val1;
+    /* if an argument, then set the variable */
+    if (esp->flag1) {
+        /* if two arguments, then <clr>, <set> */
+        if (esp->flag2) {
+                *arg = (*arg & ~esp->val2) | esp->val1;
+        } else {
+                /* one arg is new value */
+                *arg = esp->val1;
 
-		esp->flag2 = esp->flag1 = 0;	/* consume argument */
-	} else {
-		/* otherwise fetch the variable's value */
-		esp->val1 = *arg;
-		esp->flag1 = 1;
-	}
+        }
+        esp->flag2 = esp->flag1 = 0;	/* consume argument */
+    } else {
+        /* otherwise fetch the variable's value */
+        esp->val1 = *arg;
+        esp->flag1 = 1;
+    }
 }
 
 /*
@@ -905,18 +963,18 @@ int *arg;			/* argument is pointer to variable */
  * returns -1 if read EOF, 0 otherwise
  */
 read_file(lbuff, nchars, endsw)
-	struct qp *lbuff;
-	int *nchars, endsw;
+    struct qp *lbuff;
+    int *nchars, endsw;
 {
-	/* return if no input file open */
-	if (!infile->fd) {
-		infile->eofsw = -1, ctrl_e = 0;
-	} else {
-		infile->eofsw = read_stream(infile->fd, &ctrl_e, lbuff,
-			nchars, endsw, ez_val & EZ_CRLF,
-			ez_val & EZ_READFF);
-	}
-	return(esp->val1 = infile->eofsw);
+    /* return if no input file open */
+    if (!infile->fd) {
+        infile->eofsw = -1, ctrl_e = 0;
+    } else {
+        infile->eofsw = read_stream(infile->fd, &ctrl_e, lbuff,
+                nchars, endsw, ez_val & EZ_CRLF,
+                ez_val & EZ_READFF);
+    }
+    return(esp->val1 = infile->eofsw);
 }
 
 /*
@@ -927,69 +985,71 @@ read_file(lbuff, nchars, endsw)
  * conversion, ff_sw indicates whether to stop on a form feed.
  */
 read_stream(file, ff_found, lbuff, nchars, endsw, crlf_sw, ff_sw)
-	FILE *file;
-	struct qp *lbuff;
-	int *ff_found, *nchars, endsw, crlf_sw, ff_sw;
+    FILE *file;
+    struct qp *lbuff;
+    int *ff_found, *nchars, endsw, crlf_sw, ff_sw;
 {
-	int chr;
-	int crflag;
-	register struct buffcell *p;
-	register int c;
+    int chr;
+    int crflag;
+    register struct buffcell *p;
+    register int c;
 
-	/* copy pointer locally */
-	p = (*lbuff).p;
-	c = (*lbuff).c;
+    /* copy pointer locally */
+    p = (*lbuff).p;
+    c = (*lbuff).c;
 
-	/* "last char wasn't CR" */
-	crflag = 0;
-	while (((chr = getc(file)) != EOF) && ((chr != FF) || ff_sw)) {
+    /* "last char wasn't CR" */
+    crflag = 0;
+    while (((chr = getc(file)) != EOF) && ((chr != FF) || ff_sw)) {
 
-		/* automatic cr before lf */
-		if ((chr == LF) && !crflag && !crlf_sw) {
-			p->ch[c] = CR;		/* store a cr */
-			++(*nchars);		/* increment buffer count */
+        /* automatic cr before lf */
+        if ((chr == LF) && !crflag && !crlf_sw) {
+            p->ch[c] = CR;		/* store a cr */
+            ++(*nchars);		/* increment buffer count */
 
-			/* next cell? */
-			if (++c > CELLSIZE-1) {
-				/* need a new cell? */
-				if (!p->f) {
-					p->f = get_bcell();
-					p->f->b = p;
-				}
-				p = p->f;
-				c = 0;
-			}
-		}
-		p->ch[c] = chr;			/* store char */
-		++(*nchars);			/* increment character count */
+            /* next cell? */
+            if (++c > CELLSIZE-1) {
+                /* need a new cell? */
+                if (!p->f) {
+                    p->f = get_bcell();
+                    p->f->b = p;
+                }
+                p = p->f;
+                c = 0;
+            }
+        }
+        p->ch[c] = chr;			/* store char */
+        ++(*nchars);			/* increment character count */
 
-		/* next cell? */
-		if (++c > CELLSIZE-1) {
+        /* next cell? */
+        if (++c > CELLSIZE-1) {
 
-			/* need a new cell? */
-			if (!p->f) {
-				p->f = get_bcell();
-				p->f->b = p;
-			}
-			p = p->f;
-			c = 0;
-		}
-		crflag = (chr == CR);	/* flag set if last char was CR */
+            /* need a new cell? */
+            if (!p->f) {
+                p->f = get_bcell();
+                p->f->b = p;
+            }
+            p = p->f;
+            c = 0;
+        }
+        crflag = (chr == CR);	/* flag set if last char was CR */
 
-		/* term after N lines */
-		if ((chr == LF) && ((endsw < 0 && z > BUFF_LIMIT) ||
-				(endsw > 0 && --endsw == 0)))
-			break;
-	}
-	(*lbuff).p = p;			/* update pointer */
-	(*lbuff).c = c;
+        /* term after N lines */
+        if ((chr == LF) && ((endsw < 0 && z > BUFF_LIMIT) ||
+                (endsw > 0 && --endsw == 0))) {
+            break;
+        }
+    }
+    (*lbuff).p = p;			/* update pointer */
+    (*lbuff).c = c;
 
-	/* set flag to indicate whether FF found */
-	if (ff_found)
-		*ff_found = (chr == FF) ? -1 : 0;
+    /* set flag to indicate whether FF found */
+    if (ff_found) {
+        *ff_found = (chr == FF) ? -1 : 0;
+    }
 
-	/* and return "eof found" value */
-	return( (chr == EOF) ? -1 : 0);
+    /* and return "eof found" value */
+    return( (chr == EOF) ? -1 : 0);
 }
 
 /*
@@ -998,15 +1058,17 @@ read_stream(file, ff_found, lbuff, nchars, endsw, crlf_sw, ff_sw)
  * and an "append FF" switch
  */
 write_file(lbuff, nchars, ffsw)
-	struct qp *lbuff;
-	int nchars, ffsw;
+    struct qp *lbuff;
+    int nchars, ffsw;
 {
-	if (!outfile->fd && (nchars))
-		ERROR(E_NFO);
-	else
-		write_stream(outfile->fd, lbuff, nchars, ez_val & EZ_CRLF);
-	if (outfile->fd && ffsw)
-		putc(FF, outfile->fd);
+    if (!outfile->fd && (nchars)) {
+        ERROR(E_NFO);
+    } else {
+        write_stream(outfile->fd, lbuff, nchars, ez_val & EZ_CRLF);
+    }
+    if (outfile->fd && ffsw) {
+        putc(FF, outfile->fd);
+    }
 }
 
 
@@ -1017,47 +1079,47 @@ write_file(lbuff, nchars, ffsw)
  * is stream pointer, crlf_sw zero converts CRLF to LF
  */
 write_stream(file, lbuf, nchars, crlf_sw)
-	FILE *file;
-	struct qp *lbuf;
-	int nchars, crlf_sw;
+    FILE *file;
+    struct qp *lbuf;
+    int nchars, crlf_sw;
 {
-	char c;
-	int crflag;
+    char c;
+    int crflag;
 
-	crflag = 0;
-	for (; nchars > 0; nchars--) {
+    crflag = 0;
+    for (; nchars > 0; nchars--) {
 
-		/* set flag if a c.r. */
-		if ((c = (*lbuf).p->ch[(*lbuf).c]) == CR) {
-			crflag = 1;
-		} else {
-			/*
-			 * If c.r. not before lf, or if not in
-			 * "no cr" mode, output the c.r.
-			 */
-			if ((crflag) && ((c != LF) || crlf_sw)) {
-				putc(CR, file);
-			}
-			crflag = 0;
-			putc(c, file);
-		}
-		if (++(*lbuf).c > CELLSIZE-1) {
-			(*lbuf).p = (*lbuf).p->f;
-			(*lbuf).c = 0;
-		}
-	}
+        /* set flag if a c.r. */
+        if ((c = (*lbuf).p->ch[(*lbuf).c]) == CR) {
+            crflag = 1;
+        } else {
+            /*
+             * If c.r. not before lf, or if not in
+             * "no cr" mode, output the c.r.
+             */
+            if ((crflag) && ((c != LF) || crlf_sw)) {
+                    putc(CR, file);
+            }
+            crflag = 0;
+            putc(c, file);
+        }
+        if (++(*lbuf).c > CELLSIZE-1) {
+            (*lbuf).p = (*lbuf).p->f;
+            (*lbuf).c = 0;
+        }
+    }
 }
 
 /*
  * Routine to kill output file: argument is pointer to an output file structure */
 kill_output(outptr)
-	struct outfiledata *outptr;
+    struct outfiledata *outptr;
 {
-	if (outptr->fd) {
-		fclose(outptr->fd);
-		unlink(outptr->t_name);
-		outptr->fd = NULL;
-	}
+    if (outptr->fd) {
+        fclose(outptr->fd);
+        unlink(outptr->t_name);
+        outptr->fd = NULL;
+    }
 }
 
 /*
@@ -1070,226 +1132,243 @@ char panic_name[] = "TECO_SAVED.tmp";
 
 panic()
 {
-	/* if buffer nonempty and no file open, make one */
-	if (!outfile->fd && z)
-		outfile->fd = fopen(panic_name, "w");
+    /* if buffer nonempty and no file open, make one */
+    if (!outfile->fd && z) {
+        outfile->fd = fopen(panic_name, "w");
+    }
 
-	/* set a pointer to start of text buffer */
-	set_pointer(0, &aa);
+    /* set a pointer to start of text buffer */
+    set_pointer(0, &aa);
 
-	/* and write out buffer unless "open" failed */
-	if (outfile->fd && z)
-		write_file(&aa, z, 0);
+    /* and write out buffer unless "open" failed */
+    if (outfile->fd && z) {
+        write_file(&aa, z, 0);
+    }
 
-	/* close any open output files */
-	if (po_file.fd) {
-		fclose(po_file.fd);
-		po_file.fd = NULL;
-	}
+    /* close any open output files */
+    if (po_file.fd) {
+        fclose(po_file.fd);
+        po_file.fd = NULL;
+    }
 
-	if (so_file.fd) {
-		fclose(so_file.fd);
-		so_file.fd = NULL;
-	}
+    if (so_file.fd) {
+        fclose(so_file.fd);
+        so_file.fd = NULL;
+    }
 }
 
 /* do "F" commands */
 do_f()
 {
-	struct buffcell *delete_p;
+    struct buffcell *delete_p;
 
-	/* read next character and dispatch */
-	switch (mapch_l[getcmdc(trace_sw)]) {
+    /* read next character and dispatch */
+    switch (mapch_l[getcmdc(trace_sw)]) {
 
-	/* back to beginning of current iteration */
-	case '<':
-		/* if in iteration */
-		if (cptr.flag & F_ITER) {
-			cptr.p = cptr.il->p;	/* restore */
-			cptr.c = cptr.il->c;
-			cptr.dot = cptr.il->dot;
-		}
+    /* back to beginning of current iteration */
+    case '<':
+        /* if in iteration */
+        if (cptr.flag & F_ITER) {
+            cptr.p = cptr.il->p;	/* restore */
+            cptr.c = cptr.il->c;
+            cptr.dot = cptr.il->dot;
 
-		/* else, restart current macro */
-		else
-			for (cptr.dot = cptr.c = 0; cptr.p->b->b != NULL;
-					cptr.p = cptr.p->b)
-				;
-		break;
+        /* else, restart current macro */
+        } else {
+            for (cptr.dot = cptr.c = 0; cptr.p->b->b != NULL;
+                    cptr.p = cptr.p->b) {
+                ;
+            }
+        }
+        break;
 
-	/* to end of current iteration */
-	case '>':
-		find_enditer();	/* find it */
+    /* to end of current iteration */
+    case '>':
+        find_enditer();	/* find it */
 
-		/* if exit, exit appropriately */
-		if ( ( ((esp->flag1) ? esp->val1 : srch_result) >= 0) ?
-				(~colonflag) : colonflag)
-			pop_iteration(0);
-		break;
+        /* if exit, exit appropriately */
+        if ( ( ((esp->flag1) ? esp->val1 : srch_result) >= 0) ?
+                (~colonflag) : colonflag) {
+            pop_iteration(0);
+        }
+        break;
 
-	/* to end of conditional */
-	case '\'':
-	case '|':					/* to "else," or end */
-		find_endcond(cmdc);
-		break;
+    /* to end of conditional */
+    case '\'':
+    case '|':					/* to "else," or end */
+        find_endcond(cmdc);
+        break;
 
-	/* "F" search commands */
+    /* "F" search commands */
 
-	/* bounded search, alternative args */
-	case 'b':
-		do_fb();
-		break;
+    /* bounded search, alternative args */
+    case 'b':
+        do_fb();
+        break;
 
-	/* bounded search, alternative args, then "FR" */
-	case 'c':
-		if (do_fb())
-			goto do_fr;
+    /* bounded search, alternative args, then "FR" */
+    case 'c':
+        if (do_fb()) {
+            goto do_fr;
+        }
 
-		/* otherwise skip insert string */
-		while (getcmdc(trace_sw) != term_char)
-			;
-		break;
+        /* otherwise skip insert string */
+        while (getcmdc(trace_sw) != term_char) {
+            ;
+        }
+        break;
 
-	/* do "N" and then "FR" */
-	case 'n':
-		if (do_nsearch('n'))
-			goto do_fr;
+    /* do "N" and then "FR" */
+    case 'n':
+        if (do_nsearch('n')) {
+            goto do_fr;
+        }
 
-		/* otherwise skip insert string */
-		while (getcmdc(trace_sw) != term_char)
-			;
-		break;
+        /* otherwise skip insert string */
+        while (getcmdc(trace_sw) != term_char) {
+            ;
+        }
+        break;
 
-	/* do "_" and then "FR" */
-	case '_':
-		if (do_nsearch('_'))
-			goto do_fr;
+    /* do "_" and then "FR" */
+    case '_':
+        if (do_nsearch('_')) {
+            goto do_fr;
+        }
 
-		/* otherwise skip insert string */
-		while (getcmdc(trace_sw) != term_char)
-			;
-		break;
+        /* otherwise skip insert string */
+        while (getcmdc(trace_sw) != term_char) {
+            ;
+        }
+        break;
 
-	/* search and replace: search, then do "FR" */
-	case 's':
-		/* read search string and terminator */
-		build_string(&sbuf);
+    /* search and replace: search, then do "FR" */
+    case 's':
+        /* read search string and terminator */
+        build_string(&sbuf);
 
-		/* if search passed, do "FR" */
-		if (end_search(  do_search( setup_search() )  ))
-			goto do_fr;
+        /* if search passed, do "FR" */
+        if (end_search(  do_search( setup_search() )  )) {
+            goto do_fr;
+        }
 
-		/* otherwise skip insert string */
-		while (getcmdc(trace_sw) != term_char)
-			;
-		break;
+        /* otherwise skip insert string */
+        while (getcmdc(trace_sw) != term_char) {
+            ;
+        }
+        break;
 
-	/* replace last insert, search, etc. */
-	case 'r':
-		/* shouldn't have argument */
-		if (esp->flag1)
-			ERROR(E_NFR);
+    /* replace last insert, search, etc. */
+    case 'r':
+        /* shouldn't have argument */
+        if (esp->flag1) {
+            ERROR(E_NFR);
+        }
 
-		/* set terminator */
-		term_char = (atflag) ? getcmdc(trace_sw) : ESC;
-		atflag = 0;
+        /* set terminator */
+        term_char = (atflag) ? getcmdc(trace_sw) : ESC;
+        atflag = 0;
 
 do_fr:		/* entry from FN, F_, and FC */
 
-		/* save a pointer to the current spot */
-		set_pointer(dot, &cc);
+        /* save a pointer to the current spot */
+        set_pointer(dot, &cc);
 
-		/* back dot up over the string */
-		dot += ctrl_s;
+        /* back dot up over the string */
+        dot += ctrl_s;
 
-		/* code from "insert1": convert dot to a qp */
-		set_pointer(dot, &aa);
+        /* code from "insert1": convert dot to a qp */
+        set_pointer(dot, &aa);
 
-		/* save beginning of original cell */
-		delete_p = aa.p;
+        /* save beginning of original cell */
+        delete_p = aa.p;
 
-		/* update earliest char loc touched */
-		if (dot < buff_mod)
-			buff_mod = dot;
+        /* update earliest char loc touched */
+        if (dot < buff_mod) {
+            buff_mod = dot;
+        }
 
-		/* get a new cell */
-		insert_p = bb.p = get_bcell();
-		bb.c = 0;
+        /* get a new cell */
+        insert_p = bb.p = get_bcell();
+        bb.c = 0;
 
-		/* save char position of dot in cell */
-		ins_count = aa.c;
-		aa.c = 0;
+        /* save char position of dot in cell */
+        ins_count = aa.c;
+        aa.c = 0;
 
-		/* copy cell up to dot */
-		movenchars(&aa, &bb, ins_count);
+        /* copy cell up to dot */
+        movenchars(&aa, &bb, ins_count);
 
-		/* insert */
-		moveuntil(&cptr, &bb, term_char, &ins_count,
-			cptr.z-cptr.dot, trace_sw);
+        /* insert */
+        moveuntil(&cptr, &bb, term_char, &ins_count,
+                cptr.z-cptr.dot, trace_sw);
 
-		/* advance command-string pointer */
-		cptr.dot += ins_count;
+        /* advance command-string pointer */
+        cptr.dot += ins_count;
 
-		/* skip terminator */
-		getcmdc(trace_sw);
+        /* skip terminator */
+        getcmdc(trace_sw);
 
-		/* subtract delete length from buffer count */
-		z += ctrl_s;
+        /* subtract delete length from buffer count */
+        z += ctrl_s;
 
-		/* put the new cell where the old one was */
-		delete_p->b->f = insert_p;
+        /* put the new cell where the old one was */
+        delete_p->b->f = insert_p;
 
-		/* code borrowed from "insert2" */
-		insert_p->b = delete_p->b;
-		insert_p = NULL;
+        /* code borrowed from "insert2" */
+        insert_p->b = delete_p->b;
+        insert_p = NULL;
 
-		/* if replacement text was same length, we can save time */
-		if (bb.c == cc.c) {
-			/* copy rest of cell */
-			for (; bb.c < CELLSIZE; bb.c++)
-				bb.p->ch[bb.c] = cc.p->ch[bb.c];
+        /* if replacement text was same length, we can save time */
+        if (bb.c == cc.c) {
+            /* copy rest of cell */
+            for (; bb.c < CELLSIZE; bb.c++) {
+                bb.p->ch[bb.c] = cc.p->ch[bb.c];
+            }
 
-			/*
-			 * Replace orig cell's place in chain with
-			 * end of new list
-			 */
-			bb.p->f = cc.p->f;
-			if (bb.p->f)
-				bb.p->f->b = bb.p;
+            /*
+             * Replace orig cell's place in chain with
+             * end of new list
+             */
+            bb.p->f = cc.p->f;
+            if (bb.p->f) {
+                bb.p->f->b = bb.p;
+            }
 
-			/* terminate the part snipped out */
-			cc.p->f = NULL;
-			free_blist(delete_p);	/* return the old part */
-		} else {
-			/*
-			 * Different positions: shift the remainder
-			 * of the buffer
-			 */
+            /* terminate the part snipped out */
+            cc.p->f = NULL;
+            free_blist(delete_p);	/* return the old part */
 
-			/* splice rest of buffer to end */
-			bb.p->f = delete_p;
-			delete_p->b = bb.p;
+        } else {
+            /*
+             * Different positions: shift the remainder
+             * of the buffer
+             */
+
+            /* splice rest of buffer to end */
+            bb.p->f = delete_p;
+            delete_p->b = bb.p;
 
 
-			/*
-			 * Squeeze buffer, return unused cells, end buffer
-			 */
-			movenchars(&cc, &bb, z-dot);
-			free_blist(bb.p->f);
-			bb.p->f = NULL;
-		}
+            /*
+             * Squeeze buffer, return unused cells, end buffer
+             */
+            movenchars(&cc, &bb, z-dot);
+            free_blist(bb.p->f);
+            bb.p->f = NULL;
+        }
 
-		/* add # of chars inserted */
-		z += ins_count;
-		dot += ins_count;
-		ctrl_s = -ins_count;		/* save string length */
-		esp->flag1 = esp->flag2 = 0;	/* and consume arguments */
-		esp->op = OP_START;
-		break;
+        /* add # of chars inserted */
+        z += ins_count;
+        dot += ins_count;
+        ctrl_s = -ins_count;		/* save string length */
+        esp->flag1 = esp->flag2 = 0;	/* and consume arguments */
+        esp->op = OP_START;
+        break;
 
-	default:
-		ERROR(E_IFC);
-	}
+    default:
+        ERROR(E_IFC);
+    }
 }
 
 /*
@@ -1298,21 +1377,22 @@ do_fr:		/* entry from FN, F_, and FC */
  * else check exit conditions and exit or reiterate
  */
 pop_iteration(arg)
-	int arg;
+    int arg;
 {
-	/* if reiteration */
-	if (!arg && (!cptr.il->dflag || (--(cptr.il->count) > 0)) ) {
-		cptr.p = cptr.il->p;		/* restore */
-		cptr.c = cptr.il->c;
-		cptr.dot = cptr.il->dot;
-	} else {
-		/* if not last thing on stack, back up */
-		if (cptr.il->b)
-			cptr.il = cptr.il->b;
-		else
-			/* else clear "iteration" flag */
-			cptr.flag &= ~F_ITER;
-	}
+    /* if reiteration */
+    if (!arg && (!cptr.il->dflag || (--(cptr.il->count) > 0)) ) {
+        cptr.p = cptr.il->p;		/* restore */
+        cptr.c = cptr.il->c;
+        cptr.dot = cptr.il->dot;
+    } else {
+        /* if not last thing on stack, back up */
+        if (cptr.il->b) {
+            cptr.il = cptr.il->b;
+        } else {
+            /* else clear "iteration" flag */
+            cptr.flag &= ~F_ITER;
+        }
+    }
 }
 
 
@@ -1320,37 +1400,41 @@ pop_iteration(arg)
 
 find_enditer()
 {
-	register int icnt;
+    int icnt;
 
-	/* scan for matching > */
-	for (icnt = 1; icnt > 0;) {
-		/* scan for next < or > */
-		while ((skipto(0) != '<') && (skipc != '>'))
-			;
+    /* scan for matching > */
+    for (icnt = 1; icnt > 0;) {
+        /* scan for next < or > */
+        while ((skipto(0) != '<') && (skipc != '>')) {
+            ;
+        }
 
-		/* and keep track of macro level */
-		if (skipc == '<')
-			++icnt;
-		else
-			--icnt;
-	}
+        /* and keep track of macro level */
+        if (skipc == '<') {
+            ++icnt;
+        } else {
+            --icnt;
+        }
+    }
 }
 
 /* find end of conditional */
 char
 find_endcond(arg)
-	char arg;
+    char arg;
 {
-	register int icnt;
+    int icnt;
 
-	for (icnt = 1; icnt > 0;) {
-		while ((skipto(0) != '"') && (skipc != '\'') && (skipc != '|'))
-			;
-		if (skipc == '"')
-			++icnt;
-		else if (skipc == '\'')
-			--icnt;
-		else if ((icnt == 1) && (arg == '|'))
-			break;
-	}
+    for (icnt = 1; icnt > 0;) {
+        while ((skipto(0) != '"') && (skipc != '\'') && (skipc != '|')) {
+            ;
+        }
+        if (skipc == '"') {
+            ++icnt;
+        } else if (skipc == '\'') {
+            --icnt;
+        } else if ((icnt == 1) && (arg == '|')) {
+            break;
+        }
+    }
 }

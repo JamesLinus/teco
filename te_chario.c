@@ -62,138 +62,140 @@ static sigset_t suspmask;	/* Mask w. ^Z/^Y disabled */
 setup_tty(arg)
 int arg;
 {
-	int ioerr;
-	struct termios tmpbuf;
-	static int done_init = 0;
+    int ioerr;
+    struct termios tmpbuf;
+    static int done_init = 0;
 
-	/*
-	 * Establish signal masks for our major modes
-	 */
-	if (!done_init) {
-		sigemptyset(&intrmask);
-		sigaddset(&intrmask, SIGINT);
+    /*
+     * Establish signal masks for our major modes
+     */
+    if (!done_init) {
+        sigemptyset(&intrmask);
+        sigaddset(&intrmask, SIGINT);
 #ifdef SIGTSTP
-		sigemptyset(&suspmask);
-		sigaddset(&intrmask, SIGTSTP);
+        sigemptyset(&suspmask);
+        sigaddset(&intrmask, SIGTSTP);
 #endif
-		done_init = 1;
-	}
+        done_init = 1;
+    }
 
-	/* initial processing: set tty mode */
+    /* initial processing: set tty mode */
 
-	if (arg == TTY_ON)
-	{
-		/* get std input characteristics */
-		ioerr = tcgetattr(fileno(stdin), &tty_orig);
+    if (arg == TTY_ON) {
+        /* get std input characteristics */
+        ioerr = tcgetattr(fileno(stdin), &tty_orig);
 
-		/* nonzero if input not a terminal */
-		inp_noterm = (ioerr && (errno == ENOTTY));
-		if (!inp_noterm) {
-			delchar = tty_orig.c_cc[VERASE];
-		}
+        /* nonzero if input not a terminal */
+        inp_noterm = (ioerr && (errno == ENOTTY));
+        if (!inp_noterm) {
+            delchar = tty_orig.c_cc[VERASE];
+        }
 
-		/* get std output characteristics */
-		ioerr = tcgetattr(fileno(stdout), &tmpbuf);
+        /* get std output characteristics */
+        ioerr = tcgetattr(fileno(stdout), &tmpbuf);
 
-		/* nonzero if output not a terminal */
-		out_noterm = (ioerr && (errno == ENOTTY));
+        /* nonzero if output not a terminal */
+        out_noterm = (ioerr && (errno == ENOTTY));
 
-		/* make a copy of tty control structure */
-		tty_new = tty_orig;
+        /* make a copy of tty control structure */
+        tty_new = tty_orig;
 
-		/* turn on teco modes */
-		tty_new.c_iflag &= ~(INLCR|IGNCR|ICRNL|IXON|IXOFF);
-		tty_new.c_lflag &= ~(ICANON|ECHO);
-		tty_new.c_lflag |= (ISIG);
-		tty_new.c_oflag &= ~(ONLCR);
-		tty_new.c_cc[VMIN] = 1;
-		tty_new.c_cc[VTIME] = 0;
+        /* turn on teco modes */
+        tty_new.c_iflag &= ~(INLCR|IGNCR|ICRNL|IXON|IXOFF);
+        tty_new.c_lflag &= ~(ICANON|ECHO);
+        tty_new.c_lflag |= (ISIG);
+        tty_new.c_oflag &= ~(ONLCR);
+        tty_new.c_cc[VMIN] = 1;
+        tty_new.c_cc[VTIME] = 0;
 
-		/* disable the interrupt char in this one */
-		tc_noint = tty_new;
-		tc_noint.c_cc[VINTR] = -1;
-	}
+        /* disable the interrupt char in this one */
+        tc_noint = tty_new;
+        tc_noint.c_cc[VINTR] = -1;
+    }
 
-	if ((arg == TTY_ON) || (arg == TTY_RESUME))
-	{
-		/* Set up TTY for TECO */
-		tcsetattr(fileno(stdin), TCSAFLUSH, &tty_new);
+    if ((arg == TTY_ON) || (arg == TTY_RESUME)) {
+        /* Set up TTY for TECO */
+        tcsetattr(fileno(stdin), TCSAFLUSH, &tty_new);
 #ifndef DEBUG
-		/* Handle signals */
+        /* Handle signals */
 #ifdef SIGTSTP
-		sigaction(SIGTSTP, &stpsigstruc, 0);
+        sigaction(SIGTSTP, &stpsigstruc, 0);
 #endif
-		sigaction(SIGINT, &intsigstruc, 0);
-		sigaction(SIGHUP, &hupsigstruc, 0);
+        sigaction(SIGINT, &intsigstruc, 0);
+        sigaction(SIGHUP, &hupsigstruc, 0);
 #endif
-	} else {
-		/* Restore to original state */
-		tcsetattr(fileno(stdin), TCSAFLUSH, &tty_orig);
+    } else {
+        /* Restore to original state */
+        tcsetattr(fileno(stdin), TCSAFLUSH, &tty_orig);
 #ifndef DEBUG
 #ifdef SIGTSTP
-		sigaction(SIGTSTP, &nosigstr, 0);
+        sigaction(SIGTSTP, &nosigstr, 0);
 #endif
-		sigaction(SIGINT, &nosigstr, 0);
-		sigaction(SIGHUP, &nosigstr, 0);
+        sigaction(SIGINT, &nosigstr, 0);
+        sigaction(SIGHUP, &nosigstr, 0);
 #endif
-	}
+    }
 }
 
 /* routines to handle keyboard input */
 
 /*
- * routine to get a character without waiting, used by ^T when ET & 64 is
- * set if lf_sw is nonzero, return the LF; else use the FNDELAY fcntl to
- * inquire of the input
- */
+* routine to get a character without waiting, used by ^T when ET & 64 is
+* set if lf_sw is nonzero, return the LF; else use the FNDELAY fcntl to
+* inquire of the input
+*/
 gettty_nowait()
 {
-	char c;
-	int err, cnt;
+    char c;
+    int err, cnt;
 
 again:
-	if (lf_sw) {
-		lf_sw = 0;
-		return(LF);		/* LF to be sent: return it */
-	}
+    if (lf_sw) {
+        lf_sw = 0;
+        return(LF);		/* LF to be sent: return it */
+    }
 
-	/* If have pushback, return it */
-	if (backpush) {
-		c = backpush;
-		backpush = '\0';
-		return(c);
-	}
+    /* If have pushback, return it */
+    if (backpush) {
+        c = backpush;
+        backpush = '\0';
+        return(c);
+    }
 
-	/* Clear EOF if set */
-	if (feof(stdin))
-		clearerr(stdin);
+    /* Clear EOF if set */
+    if (feof(stdin)) {
+        clearerr(stdin);
+    }
 
-	/* set to "no delay" mode */
-	tty_new.c_cc[VMIN] = 0;
-	tcsetattr(fileno(stdin), TCSAFLUSH, &tty_new);
+    /* set to "no delay" mode */
+    tty_new.c_cc[VMIN] = 0;
+    tcsetattr(fileno(stdin), TCSAFLUSH, &tty_new);
 
-	/* read character, or -1, skip nulls */
-	do {
-		cnt = read(fileno(stdin), &c, sizeof(c));
-	} while ((cnt > 0) && (c == '\0'));
-	err = errno;
+    /* read character, or -1, skip nulls */
+    do {
+        cnt = read(fileno(stdin), &c, sizeof(c));
+    } while ((cnt > 0) && (c == '\0'));
+    err = errno;
 
-	/* reset to normal mode */
-	tty_new.c_cc[VMIN] = 1;
-	tcsetattr(fileno(stdin), TCSAFLUSH, &tty_new);
+    /* reset to normal mode */
+    tty_new.c_cc[VMIN] = 1;
+    tcsetattr(fileno(stdin), TCSAFLUSH, &tty_new);
 
-	/* If interrupted, try again */
-	if ((cnt < 0) && (err == EINTR))
-		goto again;
+    /* If interrupted, try again */
+    if ((cnt < 0) && (err == EINTR)) {
+        goto again;
+    }
 
-	/* No data--return -1 */
-	if (cnt == 0)
-		return(-1);
+    /* No data--return -1 */
+    if (cnt == 0) {
+        return(-1);
+    }
 
-	/* CR: set switch to make up a LF */
-	if (c == CR)
-		++lf_sw;
-	return(c);
+    /* CR: set switch to make up a LF */
+    if (c == CR) {
+        ++lf_sw;
+    }
+    return(c);
 }
 
 /* normal routine to get a character */
@@ -203,39 +205,43 @@ int in_read = 0; /* flag for "read busy" (used by interrupt handler) */
 char
 gettty()
 {
-	int c;
+    int c;
 
 again:
-	/* if switch set, make up a line feed */
-	if (lf_sw) {
-		lf_sw = 0;
-		return(LF);
-	}
+    /* if switch set, make up a line feed */
+    if (lf_sw) {
+        lf_sw = 0;
+        return(LF);
+    }
 
-	/* If have pushback, return it */
-	if (backpush) {
-		c = backpush;
-		backpush = '\0';
-		return(c);
-	}
+    /* If have pushback, return it */
+    if (backpush) {
+        c = backpush;
+        backpush = '\0';
+        return(c);
+    }
 
-	++in_read;			/* set "read busy" switch */
+    ++in_read;			/* set "read busy" switch */
 
-	/* get character; skip nulls */
-	while(!(c = getchar()))
-		;
+    /* get character; skip nulls */
+    while(!(c = getchar())) {
+        ;
+    }
 
-	/* Interrupted--try again */
-	if ((c == -1) && (errno == EINTR))
-		goto again;
+    /* Interrupted--try again */
+    if ((c == -1) && (errno == EINTR)) {
+        goto again;
+    }
 
-	c &= 0x7F;
-	in_read = 0;			/* clear switch */
-	if (c == CR)
-		++lf_sw;		/* CR: set switch to make up a LF */
-	if (c == EOF)
-		ERROR(E_EFI);		/* end-of-file from standard input */
-	return(c);
+    c &= 0x7F;
+    in_read = 0;			/* clear switch */
+    if (c == CR) {
+        ++lf_sw;		/* CR: set switch to make up a LF */
+    }
+    if (c == EOF) {
+        ERROR(E_EFI);		/* end-of-file from standard input */
+    }
+    return(c);
 }
 
 #ifndef DEBUG
@@ -245,31 +251,32 @@ again:
 void
 int_handler()
 {
-	/* if executing commands */
-	if (exitflag <= 0) {
+    /* if executing commands */
+    if (exitflag <= 0) {
 
-		/* if "trap ^C" set, clear it and ignore */
-		if (et_val & ET_CTRLC)
-			et_val &= ~ET_CTRLC;
-		else
-			/* else set flag to stop execution */
-			exitflag = -2;
-	}
+        /* if "trap ^C" set, clear it and ignore */
+        if (et_val & ET_CTRLC) {
+            et_val &= ~ET_CTRLC;
+        } else {
+            /* else set flag to stop execution */
+            exitflag = -2;
+        }
+    }
 
-	/* if interrupt happened in "getchar" pass a ^C to input */
-	if (in_read) {
-		/* clear "read" switch */
-		in_read = 0;
+    /* if interrupt happened in "getchar" pass a ^C to input */
+    if (in_read) {
+        /* clear "read" switch */
+        in_read = 0;
 
-		/* disable interrupt char */
-		tcsetattr(fileno(stdin), TCSAFLUSH, &tc_noint);
+        /* disable interrupt char */
+        tcsetattr(fileno(stdin), TCSAFLUSH, &tc_noint);
 
-		/* send a ^C to input stream */
-		qio_char(CTL('C'));
+        /* send a ^C to input stream */
+        qio_char(CTL('C'));
 
-		/* reenable interrupt char */
-		tcsetattr(fileno(stdin), TCSAFLUSH, &tty_new);
-	}
+        /* reenable interrupt char */
+        tcsetattr(fileno(stdin), TCSAFLUSH, &tty_new);
+    }
 }
 #endif
 
@@ -283,12 +290,13 @@ block_inter(func)
 int func;
 {
 #ifndef DEBUG
-	/* if arg nonzero, block interrupt */
-	if (func)
-		sigprocmask(SIG_BLOCK, &intrmask, &oldmask);
-	else
-		/* otherwise restore old signal mask */
-		sigprocmask(SIG_SETMASK, &oldmask, (sigset_t *)0);
+    /* if arg nonzero, block interrupt */
+    if (func) {
+        sigprocmask(SIG_BLOCK, &intrmask, &oldmask);
+    } else {
+        /* otherwise restore old signal mask */
+        sigprocmask(SIG_SETMASK, &oldmask, (sigset_t *)0);
+    }
 #endif
 }
 
@@ -297,38 +305,39 @@ int func;
 void
 stp_handler()
 {
-	window(WIN_SUSP);		/* restore screen */
-	setup_tty(TTY_SUSP);		/* put tty back to normal */
-	sigaction(SIGTSTP, &nosigstr, 0); 	/* put default action back */
-	sigprocmask(SIG_UNBLOCK, &suspmask, 0);	/* unblock "suspend" signal */
-	kill(0, SIGTSTP);		/* suspend this process */
+    window(WIN_SUSP);		/* restore screen */
+    setup_tty(TTY_SUSP);		/* put tty back to normal */
+    sigaction(SIGTSTP, &nosigstr, 0); 	/* put default action back */
+    sigprocmask(SIG_UNBLOCK, &suspmask, 0);	/* unblock "suspend" signal */
+    kill(0, SIGTSTP);		/* suspend this process */
 
-	/* ----- process gets suspended here ----- */
+    /* ----- process gets suspended here ----- */
 
-	/* restore local handling of "stop" signal */
-	sigaction(SIGTSTP, &stpsigstruc, 0);
-	setup_tty(TTY_RESUME);			/* restore tty */
-	buff_mod = 0;				/* set whole screen modified */
+    /* restore local handling of "stop" signal */
+    sigaction(SIGTSTP, &stpsigstruc, 0);
+    setup_tty(TTY_RESUME);			/* restore tty */
+    buff_mod = 0;				/* set whole screen modified */
 
-	/* redraw window */
-	if (win_data[7]) {
-		window(WIN_RESUME);		/* re-enable window */
-		window(WIN_REDRAW);		/* force complete redraw */
-		window(WIN_REFR);		/* and refresh */
-	}
-	qio_char('\0');				/* wake up the input
+    /* redraw window */
+    if (win_data[7]) {
+        window(WIN_RESUME);		/* re-enable window */
+        window(WIN_REDRAW);		/* force complete redraw */
+        window(WIN_REFR);		/* and refresh */
+    }
+    qio_char('\0');				/* wake up the input
 
-	/* if not executing, prompt again and echo command string so far */
-	if (exitflag)
-		retype_cmdstr('*');
+    /* if not executing, prompt again and echo command string so far */
+    if (exitflag) {
+        retype_cmdstr('*');
+    }
 }
 #endif
 
 /* simulate a character's having been typed on the keyboard */
 qio_char(c)
-	char c;
+    char c;
 {
-	backpush = c;
+    backpush = c;
 }
 
 /* routine to handle "hangup" signal */
@@ -337,14 +346,14 @@ qio_char(c)
 void
 hup_handler()
 {
-	/* if executing, set flag to terminate */
-	if (!exitflag)
-		exitflag = -3;
-	else {
-		/* dump buffer and close output files */
-		panic();
-		exit(1);
-	}
+    /* if executing, set flag to terminate */
+    if (!exitflag) {
+        exitflag = -3;
+    } else {
+        /* dump buffer and close output files */
+        panic();
+        exit(1);
+    }
 }
 #endif
 
@@ -353,77 +362,79 @@ hup_handler()
 /* type a crlf */
 crlf()
 {
-	type_char(CR);
-	type_char(LF);
+    type_char(CR);
+    type_char(LF);
 }
 
 
 
 /* routine to type one character */
 type_char(c)
-	char c;
+    char c;
 {
 
-	/* spacing char beyond end of line */
-	if ((char_count >= WN_width) && (c != CR) && !(spec_chars[c] & A_L)) {
+    /* spacing char beyond end of line */
+    if ((char_count >= WN_width) && (c != CR) && !(spec_chars[c] & A_L)) {
 
-		/* truncate output to line width */
-		if (et_val & ET_TRUNC)
-			return;
-		else
-			/*
-			 * otherwise do automatic new line (note
-			 * recursive call to type_char)
-			 */
-			crlf();
-	}
+        /* truncate output to line width */
+        if (et_val & ET_TRUNC) {
+            return;
+        } else {
+            /*
+             * otherwise do automatic new line (note
+             * recursive call to type_char)
+             */
+            crlf();
+        }
+    }
 
-	/* control char? */
-	if ((c & 0140) == 0) {
-		switch (c & 0177) {
-		case CR:
-			putchar(c);
-			char_count = 0;
-			break;
+    /* control char? */
+    if ((c & 0140) == 0) {
+        switch (c & 0177) {
+        case CR:
+            putchar(c);
+            char_count = 0;
+            break;
 
-		case LF:
-			putchar(c);
+        case LF:
+            putchar(c);
 #ifdef NOTDEF
-			scroll_dly(); /* filler chars in case VT-100 scrolls */
+            scroll_dly(); /* filler chars in case VT-100 scrolls */
 #endif
-			break;
+            break;
 
-		case ESC:
-			if ((et_val & ET_IMAGE) && !exitflag)
-				putchar(c);
-			else {
-				putchar('$');
-				char_count++;
-			}
-			break;
+        case ESC:
+            if ((et_val & ET_IMAGE) && !exitflag) {
+                putchar(c);
+            } else {
+                putchar('$');
+                char_count++;
+            }
+            break;
 
-		case TAB:
-			if ((et_val & ET_IMAGE) && !exitflag)
-				putchar(c);
-			else
-				for (type_char(' ');
-						(char_count & tabmask) != 0;
-						type_char(' '))
-					;
-			break;
+        case TAB:
+            if ((et_val & ET_IMAGE) && !exitflag) {
+                putchar(c);
+            } else {
+                for (type_char(' '); (char_count & tabmask) != 0;
+                        type_char(' ')) {
+                    ;
+                }
+            }
+            break;
 
-		default:
-			if ((et_val & ET_IMAGE) && !exitflag)
-				putchar(c);
-			else {
-				putchar('^');
-				putchar(c + 'A'-1);
-				char_count += 2;
-			}
-			break;
-		}
-	} else {
-		putchar(c);
-		char_count++;
-	}
+        default:
+            if ((et_val & ET_IMAGE) && !exitflag) {
+                putchar(c);
+            } else {
+                putchar('^');
+                putchar(c + 'A'-1);
+                char_count += 2;
+            }
+            break;
+        }
+    } else {
+        putchar(c);
+        char_count++;
+    }
 }

@@ -18,187 +18,201 @@
  * max is the maximum number of chars to move
  */
 movenchars(from, to, n)
-	struct qp *from, *to;
-	register int n;
+    struct qp *from, *to;
+    int n;
 {
-	register struct buffcell *fp, *tp;	/* local qp ".p" pointers */
-	register int fc, tc;			/* local qp ".c" subscripts */
+    struct buffcell *fp, *tp;	/* local qp ".p" pointers */
+    int fc, tc;			/* local qp ".c" subscripts */
 
-	if (n != 0) {
-		/* copy pointers to local registers */
-		fp = from->p;
-		fc = from->c;
-		tp = to->p;
-		tc = to->c;
+    /* No-op *?
+    if (n == 0) {
+        return;
+    }
 
-		for (; n > 0; n--) {
-			/* move one char */
-			tp->ch[tc++] = fp->ch[fc++];
+    /* copy pointers to local registers */
+    fp = from->p;
+    fc = from->c;
+    tp = to->p;
+    tc = to->c;
 
-			/* check current cell done */
-			if (tc > CELLSIZE-1) {
-				/* is there another following? */
-				if (!tp->f) {
-					/* no, add one */
-					tp->f = get_bcell();
-					tp->f->b = tp;
-				}
-				tp = tp->f;
-				tc = 0;
-			}
+    for (; n > 0; n--) {
+        /* move one char */
+        tp->ch[tc++] = fp->ch[fc++];
 
-			/* check current cell done */
-			if (fc > CELLSIZE-1) {
+        /* check current cell done */
+        if (tc > CELLSIZE-1) {
+            /* is there another following? */
+            if (!tp->f) {
+                /* no, add one */
+                tp->f = get_bcell();
+                tp->f->b = tp;
+            }
+            tp = tp->f;
+            tc = 0;
+        }
 
-				/* oops, run out of source */
-				if (!fp->f) {
-					/* error if not done */
-					if (n > 1)
-						ERROR(E_UTC);
-				} else {
-					/* chain to next cell */
-					fp = fp->f;
-					fc = 0;
-				}
-			}
-		}
+        /* check current cell done */
+        if (fc > CELLSIZE-1) {
 
-		/* restore arguments */
-		from->p = fp;
-		to->p = tp;
-		from->c = fc;
-		to->c = tc;
-	}
+            /* oops, run out of source */
+            if (!fp->f) {
+                /* error if not done */
+                if (n > 1) {
+                    ERROR(E_UTC);
+                }
+            } else {
+                /* chain to next cell */
+                fp = fp->f;
+                fc = 0;
+            }
+        }
+    }
+
+    /* restore arguments */
+    from->p = fp;
+    to->p = tp;
+    from->c = fc;
+    to->c = tc;
 }
 
 moveuntil(from, to, c, n, max, trace)
-	struct qp *from, *to;	/* address of buffer pointers */
-	register char c;	/* match char that ends move */
-	int *n;			/* pointer to returned value */
-	int max;		/* limit on chars to move */
-	int trace;		/* echo characters if nonzero */
+    struct qp *from, *to;	/* address of buffer pointers */
+    char c;             	/* match char that ends move */
+    int *n;			/* pointer to returned value */
+    int max;    		/* limit on chars to move */
+    int trace;  		/* echo characters if nonzero */
 {
-	register struct buffcell *fp, *tp;	/* local qpr ".p" pointers */
-	register int fc, tc;			/* local qpr ".c" subscripts */
+    struct buffcell *fp, *tp;	/* local qpr ".p" pointers */
+    int fc, tc;			/* local qpr ".c" subscripts */
 
-	/* copy pointers to local registers */
-	fp = from->p;
-	fc = from->c;
-	tp = to->p;
-	tc = to->c;
+    /* copy pointers to local registers */
+    fp = from->p;
+    fc = from->c;
+    tp = to->p;
+    tc = to->c;
 
-	/* until terminating char... */
-	for (*n = 0; fp->ch[fc] != c; (*n)++) {
-		if (max-- <= 0)
-			ERROR((msp <= &mstack[0]) ? E_UTC : E_UTM);
+    /* until terminating char... */
+    for (*n = 0; fp->ch[fc] != c; (*n)++) {
+        if (max-- <= 0) {
+            ERROR((msp <= &mstack[0]) ? E_UTC : E_UTM);
+        }
 
-		/* move one char */
-		tp->ch[tc++] = fp->ch[fc++];
+        /* move one char */
+        tp->ch[tc++] = fp->ch[fc++];
 
-		/* type it out if trace mode */
-		if (trace)
-			type_char(tp->ch[tc-1]);
+        /* type it out if trace mode */
+        if (trace) {
+            type_char(tp->ch[tc-1]);
+        }
 
-		/* check current cell done */
-		if (tc > CELLSIZE-1) {
-			/* is there another following? */
-			if (!tp->f) {
-				tp->f = get_bcell();	/* no, add one */
-				tp->f->b = tp;
-			}
-			tp = tp->f;
-			tc = 0;
-		}
+        /* check current cell done */
+        if (tc > CELLSIZE-1) {
+            /* is there another following? */
+            if (!tp->f) {
+                tp->f = get_bcell();	/* no, add one */
+                tp->f->b = tp;
+            }
+            tp = tp->f;
+            tc = 0;
+        }
 
-		/* check current cell done */
-		if (fc > CELLSIZE-1) {
-			 /* oops, run out of source */
-			if (!fp->f)
-				ERROR(E_UTC);
-			else {
-				fp = fp->f;	/* chain to next cell */
-				fc = 0;
-			}
-		}
-	}
+        /* check current cell done */
+        if (fc > CELLSIZE-1) {
+             /* oops, run out of source */
+            if (!fp->f) {
+                ERROR(E_UTC);
+            } else {
+                fp = fp->f;	/* chain to next cell */
+                fc = 0;
+            }
+        }
+    }
 
-	/* restore arguments */
-	from->p = fp;
-	to->p = tp;
-	from->c = fc;
-	to->c = tc;
+    /* restore arguments */
+    from->p = fp;
+    to->p = tp;
+    from->c = fc;
+    to->c = tc;
 }
 
 /* routine to get numeric argument */
 /* get a value, default is argument */
 get_value(d)
-	int d;
+    int d;
 {
-	int v;
+    int v;
 
-	v = (esp->flag1) ? esp->val1 : 
-	(esp->op == OP_SUB) ? -d : d;
-	esp->flag1 = 0;		/* consume argument */
-	esp->op = OP_START;
-	return(v);
+    v = (esp->flag1) ? esp->val1 : 
+    (esp->op == OP_SUB) ? -d : d;
+    esp->flag1 = 0;		/* consume argument */
+    esp->op = OP_START;
+    return(v);
 }
 
 /* routine to convert a line count */
 /* returns number of chars between dot and nth line feed */
 lines(arg)
-	register int arg;
+    int arg;
 {
-	register int i, c;
-	register struct buffcell *p;
+    int i, c;
+    struct buffcell *p;
 
-	/* find dot */
-	for (i = dot / CELLSIZE, p = buff.f; (i > 0) && (p->f); i--)
-		p = p->f;
-	c = dot % CELLSIZE;
+    /* find dot */
+    for (i = dot / CELLSIZE, p = buff.f; (i > 0) && (p->f); i--) {
+        p = p->f;
+    }
+    c = dot % CELLSIZE;
 
-	/* scan backwards */
-	if (arg <= 0) {
-		/* repeat for each line */
-		for (i = dot; (arg < 1) && (i > 0); ) {
-			/* count characters */
-			--i;
+    /* scan backwards */
+    if (arg <= 0) {
+        /* repeat for each line */
+        for (i = dot; (arg < 1) && (i > 0); ) {
+            /* count characters */
+            --i;
 
-			/* back up the pointer */
-			if (--c < 0) {
-				if (!(p = p->b))
-					break;
-				c = CELLSIZE - 1;
-			}
+            /* back up the pointer */
+            if (--c < 0) {
+                if (!(p = p->b)) {
+                    break;
+                }
+                c = CELLSIZE - 1;
+            }
 
-			/* if line sep found */
-			if ( (ez_val & EZ_NOVTFF) ?
-					(p->ch[c] == LF) :
-					(spec_chars[p->ch[c]] & A_L) )
-				++arg;
-		}
+            /* if line sep found */
+            if ( (ez_val & EZ_NOVTFF) ?
+                    (p->ch[c] == LF) :
+                    (spec_chars[p->ch[c]] & A_L) ) {
+                ++arg;
+            }
+        }
 
-		/*
-		 * If terminated on a line separator,
-		 * advance over the separator
-		 */
-		if (arg > 0) ++i;
-	} else {
+        /*
+         * If terminated on a line separator,
+         * advance over the separator
+         */
+        if (arg > 0) {
+            ++i;
+        }
 
-		/* scan forwards */
-		for (i = dot; (arg > 0) && (i < z); i++) {
-			if ( (ez_val & EZ_NOVTFF) ?
-					(p->ch[c] == LF) :
-					(spec_chars[p->ch[c]] & A_L) )
-				--arg;
+    } else {
 
-			if (++c > CELLSIZE-1) {
-				if (!(p = p->f))
-					break;
-				c = 0;
-			}
-		}	/* this will incr over the separator anyway */
-	}
-	return(i - dot);
+        /* scan forwards */
+        for (i = dot; (arg > 0) && (i < z); i++) {
+            if ( (ez_val & EZ_NOVTFF) ?
+                    (p->ch[c] == LF) :
+                    (spec_chars[p->ch[c]] & A_L) ) {
+                --arg;
+            }
+
+            if (++c > CELLSIZE-1) {
+                if (!(p = p->f)) {
+                    break;
+                }
+                c = 0;
+            }
+        }	/* this will incr over the separator anyway */
+    }
+    return(i - dot);
 }
 
 /*
@@ -209,97 +223,113 @@ lines(arg)
  * string, and a char count value
  */
 line_args(d, p)
-	int d;			/* nonzero: leave dot at start */
-	struct qp *p;
+    int d;			/* nonzero: leave dot at start */
+    struct qp *p;
 {
-	int n;
+    int n;
 
-	/* if two args */
-	if (esp->flag1 && esp->flag2) {
+    /* if two args */
+    if (esp->flag1 && esp->flag2) {
 
-		/* in right order */
-		if (esp->val1 <= esp->val2) {
-			if (esp->val1 < 0)
-				esp->val1 = 0;
-			if (esp->val2 > z)
-				esp->val2 = z;
+        /* in right order */
+        if (esp->val1 <= esp->val2) {
+            if (esp->val1 < 0) {
+                esp->val1 = 0;
+            }
+            if (esp->val2 > z) {
+                esp->val2 = z;
+            }
 
-			/* update dot */
-			if (d)
-				dot = esp->val1;
+            /* update dot */
+            if (d) {
+                dot = esp->val1;
+            }
 
-			/*
-			 * Set pointer, consume arguments, return count
-			 */
-			set_pointer(esp->val1, p);
-			esp->flag2 = esp->flag1 = 0;
-			esp->op = OP_START;
-			return(esp->val2 - esp->val1);
-		} else {
-			if (esp->val2 < 0)
-				esp->val2 = 0;
-			if (esp->val1 > z)
-				esp->val1 = z;
+            /*
+             * Set pointer, consume arguments, return count
+             */
+            set_pointer(esp->val1, p);
+            esp->flag2 = esp->flag1 = 0;
+            esp->op = OP_START;
+            return(esp->val2 - esp->val1);
 
-			/* update dot */
-			if (d)
-				dot = esp->val2;
+        }
+
+        if (esp->val2 < 0) {
+            esp->val2 = 0;
+        }
+        if (esp->val1 > z) {
+            esp->val1 = z;
+        }
+
+        /* update dot */
+        if (d) {
+            dot = esp->val2;
+        }
 
 
-			/*
-			 * Use args in reverse order, consume them,
-			 * return
-			 */
-			set_pointer(esp->val2, p);
-			esp->flag2 = esp->flag1 = 0;
-			esp->op = OP_START;
-			return(esp->val1 - esp->val2);
-		}
-	} else {
-		n = lines(get_value(1));
-		if (n < -dot)
-			n = -dot;
-		else if (n > z-dot)
-			n = z-dot;
-		if (n >= 0)
-			set_pointer(dot, p);
-		else {
-			n = -n;
-			set_pointer(dot - n, p);
-			if (d)
-				dot -= n;
-		}
-		return(n);
-	}
+        /*
+         * Use args in reverse order, consume them,
+         * return
+         */
+        set_pointer(esp->val2, p);
+        esp->flag2 = esp->flag1 = 0;
+        esp->op = OP_START;
+        return(esp->val1 - esp->val2);
+
+    }
+
+    n = lines(get_value(1));
+    if (n < -dot) {
+        n = -dot;
+    } else if (n > z-dot) {
+        n = z-dot;
+    }
+    if (n >= 0) {
+        set_pointer(dot, p);
+    } else {
+        n = -n;
+        set_pointer(dot - n, p);
+        if (d) {
+            dot -= n;
+        }
+    }
+    return(n);
 }
 
 /* convert character c to a q-register spec */
 /* fors ("file or search") nonzero = allow _ or * */
 getqspec(fors, c)
-	int fors;
-	char c;
+    int fors;
+    char c;
 {
-	if (isdigit(c))
-		return(c - '0' + 1);
-	else if (isalpha(c))
-		return(mapch_l[c] - 'a' + 11);
+    if (isdigit(c)) {
+        return(c - '0' + 1);
+    }
+    if (isalpha(c)) {
+        return(mapch_l[c] - 'a' + 11);
+    }
 
-	/*
-	 * q# is special because we need to be able to load macro commands
-	 * from an external command, and then execute them.
-	 */
-	else if (c == '#')
-		return(TIMBUF);
-	else if (fors) {
-		if (c == '_')
-			return (SERBUF);
-		if (c == '*')
-			return (FILBUF);
-		if (c == '%')
-			return (SYSBUF);
-	}
-	ERROR(E_IQN);
-	/*NOTREACHED*/
+    /*
+     * q# is special because we need to be able to load macro commands
+     * from an external command, and then execute them.
+     */
+    if (c == '#') {
+        return(TIMBUF);
+    }
+
+    if (fors) {
+        if (c == '_') {
+            return (SERBUF);
+        }
+        if (c == '*') {
+            return (FILBUF);
+        }
+        if (c == '%') {
+            return (SYSBUF);
+        }
+    }
+    ERROR(E_IQN);
 }
 
 /*
@@ -311,57 +341,58 @@ getqspec(fors, c)
 struct buffcell *insert_p;
 insert1()
 {
-	int nchars;			/* number of chars in cell */
+    int nchars;			/* number of chars in cell */
 
-	/* convert dot to a qp */
-	set_pointer(dot, &aa);
+    /* convert dot to a qp */
+    set_pointer(dot, &aa);
 
-	/* update earliest char loc touched */
-	if (dot < buff_mod)
-		buff_mod = dot;
+    /* update earliest char loc touched */
+    if (dot < buff_mod) {
+        buff_mod = dot;
+    }
 
-	/* get a new cell */
-	insert_p = bb.p = get_bcell();
-	bb.c = 0;
-	nchars = aa.c;		/* save char position of dot in cell */
-	aa.c = 0;
+    /* get a new cell */
+    insert_p = bb.p = get_bcell();
+    bb.c = 0;
+    nchars = aa.c;		/* save char position of dot in cell */
+    aa.c = 0;
 
-	/*
-	 * now aa points to the beginning of the buffer cell that
-	 * contains dot, bb points to the beginning of a new cell,
-	 * nchars is the number of chars before dot
-	 */
-	movenchars(&aa, &bb, nchars);	/* copy cell up to dot */
+    /*
+     * now aa points to the beginning of the buffer cell that
+     * contains dot, bb points to the beginning of a new cell,
+     * nchars is the number of chars before dot
+     */
+    movenchars(&aa, &bb, nchars);	/* copy cell up to dot */
 }
 
 /* count is the number of chars added */
 insert2(count)
-	int count;
+    int count;
 {
-	/* put the new cell where the old one was */
-	aa.p->b->f = insert_p;
-	insert_p->b = aa.p->b;
-	insert_p = NULL;
+    /* put the new cell where the old one was */
+    aa.p->b->f = insert_p;
+    insert_p->b = aa.p->b;
+    insert_p = NULL;
 
-	/* splice rest of buffer to end */
-	bb.p->f = aa.p;
-	aa.p->b = bb.p;
+    /* splice rest of buffer to end */
+    bb.p->f = aa.p;
+    aa.p->b = bb.p;
 
-	/* squeeze buffer */
-	movenchars(&aa, &bb, z-dot);
+    /* squeeze buffer */
+    movenchars(&aa, &bb, z-dot);
 
-	/* return unused cells */
-	free_blist(bb.p->f);
+    /* return unused cells */
+    free_blist(bb.p->f);
 
-	/* and end the buffer */
-	bb.p->f = NULL;
+    /* and end the buffer */
+    bb.p->f = NULL;
 
-	/* add # of chars inserted */
-	z += count;
-	dot += count;
+    /* add # of chars inserted */
+    z += count;
+    dot += count;
 
-	/* save string length */
-	ctrl_s = -count;
+    /* save string length */
+    ctrl_s = -count;
 }
 
 /*
@@ -369,48 +400,53 @@ insert2(count)
  * argument is number of characters
  */
 delete1(nchars)
-	int nchars;
+    int nchars;
 {
-	/* 0 chars is a nop */
-	if (!nchars)
-		return;
+    /* 0 chars is a nop */
+    if (!nchars) {
+        return;
+    }
 
-	/* delete negative number of characters? */
-	if (nchars < 0) {
-		/* make ll positive */
-		nchars = -nchars;
+    /* delete negative number of characters? */
+    if (nchars < 0) {
+        /* make ll positive */
+        nchars = -nchars;
 
-		/* don't delete beyond beg of buffer */
-		if (nchars > dot)
-			ERROR(E_POP);
+        /* don't delete beyond beg of buffer */
+        if (nchars > dot) {
+            ERROR(E_POP);
+        }
 
-		/* put pointer before deleted text */
-		dot -= nchars;
-	} else if (dot + nchars > z)
-		/* don't delete beyond end of buffer */
-		ERROR(E_POP);
+        /* put pointer before deleted text */
+        dot -= nchars;
 
-	/* pointer to beginning of area to delete */
-	set_pointer(dot, &aa);
+    } else if (dot + nchars > z) {
+        /* don't delete beyond end of buffer */
+        ERROR(E_POP);
+    }
 
-	/* and to end */
-	set_pointer(dot+nchars, &bb);
+    /* pointer to beginning of area to delete */
+    set_pointer(dot, &aa);
 
-	/* update earliest char loc touched */
-	if (dot < buff_mod)
-		buff_mod = dot;
+    /* and to end */
+    set_pointer(dot+nchars, &bb);
 
-	/* move text unless delete ends at z */
-	movenchars(&bb, &aa, z-(dot+nchars));
+    /* update earliest char loc touched */
+    if (dot < buff_mod) {
+        buff_mod = dot;
+    }
 
-	/* return any cells after end */
-	free_blist(aa.p->f);
+    /* move text unless delete ends at z */
+    movenchars(&bb, &aa, z-(dot+nchars));
 
-	/* end the buffer */
-	aa.p->f = NULL;
+    /* return any cells after end */
+    free_blist(aa.p->f);
 
-	/* adjust z */
-	z -= nchars;
+    /* end the buffer */
+    aa.p->f = NULL;
+
+    /* adjust z */
+    z -= nchars;
 }
 
 /*
@@ -419,113 +455,128 @@ delete1(nchars)
 struct qh obuff;		/* tag string buffer */
 do_o()
 {
-	int i, j;		/* i used as start of tag, j as end */
-	int p,			/* pointer to tag string */
-		level;		/* iteration level */
-	int epfound;		/* flag for "second ! found" */
+    int i, j;		/* i used as start of tag, j as end */
+    int p,			/* pointer to tag string */
+            level;		/* iteration level */
+    int epfound;		/* flag for "second ! found" */
 
-	/* no tag spec'd: continue */
-	if (!build_string(&obuff))
-		return;
+    /* no tag spec'd: continue */
+    if (!build_string(&obuff)) {
+        return;
+    }
 
-	/* string too long */
-	if (obuff.z > CELLSIZE)
-		ERROR(E_STL);
-	esp->op = OP_START;	/* consume any argument */
-	if (esp->flag1) {	/* is there one? */
-		esp->flag1 = 0;		/* consume it */
-		if (esp->val1 < 0)
-			return;		/* computed goto out of range - */
+    /* string too long */
+    if (obuff.z > CELLSIZE) {
+        ERROR(E_STL);
+    }
+    esp->op = OP_START;	/* consume any argument */
+    if (esp->flag1) {	/* is there one? */
+        esp->flag1 = 0;		/* consume it */
+        if (esp->val1 < 0) {
+            return;		/* computed goto out of range - */
+        }
 
-		/* scan to find right tag */
-		for (i = 0; (i < obuff.z) && (esp->val1 > 0); i++)
-			/* count commas */
-			if (obuff.f->ch[i] == ',')
-				esp->val1--;
+        /* scan to find right tag */
+        for (i = 0; (i < obuff.z) && (esp->val1 > 0); i++) {
+            /* count commas */
+            if (obuff.f->ch[i] == ',') {
+                esp->val1--;
+            }
+        }
 
-		/* computed goto out of range + */
-		if (esp->val1 > 0)
-			return;
+        /* computed goto out of range + */
+        if (esp->val1 > 0) {
+            return;
+        }
 
-		/* now i is either at 0 or after the nth comma */
+        /* now i is either at 0 or after the nth comma */
 
-		for (j = i; j < obuff.z; j++)	/* find end of tag */
-			/* stop at next comma */
-			if (obuff.f->ch[j] == ',')
-				break;
+        for (j = i; j < obuff.z; j++) {	/* find end of tag */
+            /* stop at next comma */
+            if (obuff.f->ch[j] == ',') {
+                break;
+            }
+        }
 
-		/* two adjacent commas: zero length tag */
-		if (j == i)
-			return;
-	} else {
-		/* not a computed goto: use whole tag buffer */
-		i = 0;
-		j = obuff.z;
-	}
+        /* two adjacent commas: zero length tag */
+        if (j == i) {
+            return;
+        }
 
-	/* start from beginning of iteration or macro, and look for tag */
+    } else {
+        /* not a computed goto: use whole tag buffer */
+        i = 0;
+        j = obuff.z;
+    }
 
-	if (cptr.flag & F_ITER)			/* if in iteration */
-	{
-		cptr.p = cptr.il->p;		/* restore */
-		cptr.c = cptr.il->c;
-		cptr.dot = cptr.il->dot;
-	} else
-		/* find macro start */
-		for (cptr.dot = cptr.c = 0; cptr.p->b->b != NULL;
-			cptr.p = cptr.p->b);
+    /* start from beginning of iteration or macro, and look for tag */
 
-	/* search for tag */
+    if (cptr.flag & F_ITER) {			/* if in iteration */
+            cptr.p = cptr.il->p;		/* restore */
+            cptr.c = cptr.il->c;
+            cptr.dot = cptr.il->dot;
 
-	/* look through rest of command string */
-	for (level = 0; ;) {
+    } else {
+        /* find macro start */
+        for (cptr.dot = cptr.c = 0; cptr.p->b->b != NULL;
+                cptr.p = cptr.p->b) {
+            ;
+        }
+    }
 
-		/* look for interesting things, including ! */
-		switch (skipto(1))
-		{
-		case '<':			/* start of iteration */
-			++level;
-			break;
+    /* search for tag */
 
-		case '>':			/* end of iteration */
-			if ((level == 0) && (cptr.flag & F_ITER))
-				pop_iteration(1);
-			else
-				--level;
-			break;
+    /* look through rest of command string */
+    for (level = 0; ;) {
 
-		case '!':			/* start of tag */
+        /* look for interesting things, including ! */
+        switch (skipto(1)) {
+        case '<':			/* start of iteration */
+            ++level;
+            break;
 
-			/* keep looking for tag */
-			for (;;) {
-				epfound = 0;
-				for (p = i; p < j; p++) {
-					/* mark trailing ! found */
-					if (getcmdc(0) == '!') {
-						epfound = 1;
-						break;
-					}
+        case '>':			/* end of iteration */
+            if ((level == 0) && (cptr.flag & F_ITER)) {
+                pop_iteration(1);
+            } else {
+                --level;
+            }
+            break;
 
-					/* compare */
-					if (mapch_l[cmdc] !=
-							mapch_l[obuff.f->ch[p]])
-						break;
-				}
+        case '!':			/* start of tag */
 
-				/* If all comparison chars matched, done */
-				if ((p == j) && peekcmdc('!')) {
-					getcmdc(0);	/* Junk last '!' */
-					return;
-				} else if (!epfound) {
-					/* Get rest of non-matching tag, toss */
-					while (getcmdc(0) != '!')
-						continue;
-				}
-				break;
-			}
-			break;
-		}		/* end of switch */
-	}		/* end of scan loop */
+            /* keep looking for tag */
+            for (;;) {
+                    epfound = 0;
+                    for (p = i; p < j; p++) {
+                        /* mark trailing ! found */
+                        if (getcmdc(0) == '!') {
+                            epfound = 1;
+                            break;
+                        }
+
+                        /* compare */
+                        if (mapch_l[cmdc] !=
+                                mapch_l[obuff.f->ch[p]]) {
+                            break;
+                        }
+                    }
+
+                    /* If all comparison chars matched, done */
+                    if ((p == j) && peekcmdc('!')) {
+                        getcmdc(0);	/* Junk last '!' */
+                        return;
+                    } else if (!epfound) {
+                        /* Get rest of non-matching tag, toss */
+                        while (getcmdc(0) != '!') {
+                            continue;
+                        }
+                    }
+                    break;
+            }
+            break;
+        }		/* end of switch */
+    }		/* end of scan loop */
 }		/* end of subroutine */
 
 /*
@@ -535,177 +586,189 @@ do_o()
  * returns character found, and leaves it in skipc
  */
 char skipto(arg)
-	int arg;
+    int arg;
 {
-	int atsw;		/* "at" prefix */
-	char ta, term;		/* temp attributes, terminator */
+    int atsw;		/* "at" prefix */
+    char ta, term;		/* temp attributes, terminator */
 
-	for (atsw = 0; ;) {
-		/* read until something interesting found */
-		while (!(ta = spec_chars[skipc = getcmdc(0)] &
-				(A_X | A_S | A_T | A_Q)))
-			;
+    for (atsw = 0; ;) {
+        /* read until something interesting found */
+        while (!(ta = spec_chars[skipc = getcmdc(0)] &
+                (A_X | A_S | A_T | A_Q))) {
+            ;
+        }
 again:
-		/* if command takes a Q spec, skip the spec */
-		if (ta & A_Q)
-			getcmdc(0);
+        /* if command takes a Q spec, skip the spec */
+        if (ta & A_Q) {
+            getcmdc(0);
+        }
 
-		/* sought char found: quit */
-		if (ta & A_X) {
-			/* quote must skip next char */
-			if (skipc == '"')
-				getcmdc(0);
-			return(skipc);
-		}
+        /* sought char found: quit */
+        if (ta & A_X) {
+            /* quote must skip next char */
+            if (skipc == '"') {
+                    getcmdc(0);
+            }
+            return(skipc);
+        }
 
-		/* other special char */
-		if (ta & A_S) {
-			skipc = mapch_l[skipc];
-			switch (skipc) {
-			case '^': /* treat next char as CTL */
-				if (ta = spec_chars[skipc = getcmdc(0) & 0x1f])
-					goto again;
-				break;
+        /* other special char */
+        if (ta & A_S) {
+            skipc = mapch_l[skipc];
+            switch (skipc) {
+            case '^': /* treat next char as CTL */
+                if (ta = spec_chars[skipc = getcmdc(0) & 0x1f]) {
+                        goto again;
+                }
+                break;
 
-			case '@': /* use alternative text terminator */
-				atsw = 1;
-				break;
+            case '@': /* use alternative text terminator */
+                atsw = 1;
+                break;
 
-			/* ^^ is value of next char: skip that char */
-			case CTL('^'):
-				getcmdc(0);
-				break;
+            /* ^^ is value of next char: skip that char */
+            case CTL('^'):
+                getcmdc(0);
+                break;
 
-			case CTL('A'): /* type text */
-				term = (atsw) ? getcmdc(0) : CTL('A');
-				atsw = 0;
+            case CTL('A'): /* type text */
+                term = (atsw) ? getcmdc(0) : CTL('A');
+                atsw = 0;
 
-				/* skip text */
-				while (getcmdc(0) != term)
-					;
-				break;
+                /* skip text */
+                while (getcmdc(0) != term) {
+                    ;
+                }
+                break;
 
-			case '!': /* tag */
-				if (arg)
-					return(skipc);
+            case '!': /* tag */
+                if (arg) {
+                    return(skipc);
+                }
 
-				/* skip until next ! */
-				while (getcmdc(0) != '!')
-					;
-				break;
+                /* skip until next ! */
+                while (getcmdc(0) != '!') {
+                    ;
+                }
+                break;
 
-			case 'e': /* first char of two-letter E or F command */
-			case 'f':
-				/* if one with a text arg */
-				if (spec_chars[getcmdc(0)] &
-						((skipc == 'e') ? A_E : A_F)) {
-					term = (atsw) ? getcmdc(0) : ESC;
-					atsw = 0;
+            case 'e': /* first char of two-letter E or F command */
+            case 'f':
+                /* if one with a text arg */
+                if (spec_chars[getcmdc(0)] &
+                        ((skipc == 'e') ? A_E : A_F)) {
+                    term = (atsw) ? getcmdc(0) : ESC;
+                    atsw = 0;
 
-					/* read past terminator */
-					while (getcmdc(0) != term)
-						;
-				}
-				break;
-			} /* end "switch" */
+                    /* read past terminator */
+                    while (getcmdc(0) != term) {
+                        ;
+                    }
+                }
+                break;
+            } /* end "switch" */
 
-		/* command with a text argument */
-		} else if (ta & A_T) {
-			term = (atsw) ? getcmdc(0) : ESC;
-			atsw = 0;
+    /* command with a text argument */
+        } else if (ta & A_T) {
+            term = (atsw) ? getcmdc(0) : ESC;
+            atsw = 0;
 
-			/* skip text */
-			while (getcmdc(0) != term)
-				;
-		}
-	} /* end "forever" */
+            /* skip text */
+            while (getcmdc(0) != term) {
+                ;
+            }
+        }
+    } /* end "forever" */
 } /* end "skipto()" */
 
 /* find number of characters to next matching (, [, or {  (like '%' in vi) */
 do_ctlp()
 {
-	int i, l;
-	char c, c1;
+    int i, l;
+    char c, c1;
 
-	set_pointer(dot, &aa);			/* point to text buffer */
-	switch(c1 = aa.p->ch[aa.c])
-	{
-	case '(':
-		c = ')';			/* match char is ) */
-		i = 1;				/* direction is positive */
-		break;
+    set_pointer(dot, &aa);			/* point to text buffer */
+    switch(c1 = aa.p->ch[aa.c])
+    {
+    case '(':
+        c = ')';			/* match char is ) */
+        i = 1;				/* direction is positive */
+        break;
 
-	case ')':
-		c = '(';			/* match char is ( */
-		i = -1;				/* direction is negative */
-		break;
+    case ')':
+        c = '(';			/* match char is ( */
+        i = -1;				/* direction is negative */
+        break;
 
-	case '[':
-		c = ']';
-		i = 1;
-		break;
+    case '[':
+        c = ']';
+        i = 1;
+        break;
 
-	case ']':
-		c = '[';
-		i = -1;
-		break;
+    case ']':
+        c = '[';
+        i = -1;
+        break;
 
-	case '{':
-		c = '}';
-		i = 1;
-		break;
+    case '{':
+        c = '}';
+        i = 1;
+        break;
 
-	case '}':
-		c = '{';
-		i = -1;
-		break;
+    case '}':
+        c = '{';
+        i = -1;
+        break;
 
-	case '<':
-		c = '>';
-		i = 1;
-		break;
+    case '<':
+        c = '>';
+        i = 1;
+        break;
 
-	case '>':
-		c = '<';
-		i = -1;
-		break;
+    case '>':
+        c = '<';
+        i = -1;
+        break;
 
-	case '"':
-		c = '\'';
-		i = 1;
-		break;
-		
-	    case '\'':
-		c = '"';
-		i = -1;
-		break;
+    case '"':
+        c = '\'';
+        i = 1;
+        break;
 
-	default:
-		/* not on a matchable char, return 0 */
-		esp->val1 = i = 0;
-	}
+    case '\'':
+        c = '"';
+        i = -1;
+        break;
 
-	l = 1;			/* start with one unmatched char */
+    default:
+            /* not on a matchable char, return 0 */
+            esp->val1 = i = 0;
+    }
 
-	/* if searching forward */
-	if (i > 0) {
-		for (i = dot, fwdc(&aa); (i < z) && (l); fwdc(&aa) ) {
-			++i;
-			if (aa.p->ch[aa.c] == c)
-				--l;
-			else if (aa.p->ch[aa.c] == c1)
-				++l;
-		}
-		esp->val1 = (i < z) ? i - dot : 0;
-	} else if (i < 0) {
-		for (i = dot, backc(&aa); (i >= 0) && (l); backc(&aa) ) {
-			--i;
-			if (aa.p->ch[aa.c] == c)
-				--l;
-			else if (aa.p->ch[aa.c] == c1)
-				++l;
-		}
-		esp->val1 = (i >= 0) ? i - dot : 0;
-	}
-	esp->flag1 = 1;
+    l = 1;			/* start with one unmatched char */
+
+    /* if searching forward */
+    if (i > 0) {
+        for (i = dot, fwdc(&aa); (i < z) && (l); fwdc(&aa) ) {
+            ++i;
+            if (aa.p->ch[aa.c] == c) {
+                --l;
+            } else if (aa.p->ch[aa.c] == c1) {
+                ++l;
+            }
+        }
+        esp->val1 = (i < z) ? i - dot : 0;
+
+    } else if (i < 0) {
+        for (i = dot, backc(&aa); (i >= 0) && (l); backc(&aa) ) {
+            --i;
+            if (aa.p->ch[aa.c] == c) {
+                --l;
+            } else if (aa.p->ch[aa.c] == c1) {
+                ++l;
+            }
+        }
+        esp->val1 = (i >= 0) ? i - dot : 0;
+    }
+    esp->flag1 = 1;
 }
