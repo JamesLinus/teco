@@ -1,0 +1,317 @@
+---------------------------------------------------------------------------
+This is from "The Jargon File",,  which attempts to define all kinds of
+computer jargon. The Jargon File was a message posted to the
+alt.folklore.computers newsgroup on UseNet in 1990.
+
+TECO /tee'koh/ [acronym for Tape (later, Text) Editor and COrrector]
+   n. 1. A text editor developed at MIT, and modified by just about
+   everybody.  If all the dialects are included, TECO might have been
+   the single most prolific editor in use before EMACS (q.v.) to which
+   it was directly ancestral.  Noted for its powerful
+   programming-language-like features and its incredibly hairy syntax.
+   It is literally the case that every possible sequence of ASCII
+   characters is a valid, though probably uninteresting, TECO program;
+   one common hacker game used to be mentally working out what the
+   teco commands corresponding to human names did.  As an example,
+   here is a TECO program that takes a list of names like this:
+
+	Loser, J. Random
+	Quux, The Great
+	Dick, Moby
+
+   sorts them alphabetically according to last name, and then puts the
+   last name last, removing the comma, to produce this:
+
+	Moby Dick
+	J. Random Loser
+	The Great Quux
+
+   The program is:
+
+	[1 J ^P $ L $ $
+	J <.-Z; .,(S,$ -D .)FX1 @F^B $K :L I $ G1 L>$$
+
+   In fact, this very program was used to produce the second, sorted
+   list from the first list!  The first time I tried the program it
+   had a BUG: I had accidentally omitted the "@" in front of
+   "F^B", which as anyone can see is clearly the wrong thing.  It
+   worked fine the second time.  There is no space to describe all the
+   features of TECO, but I will note that "^P" means "sort" and
+   "J <.-Z; ... L>" is an idiomatic series of commands for "do once
+   for every line".
+
+   Historical data from MRC: DEC grabbed an ancient version of MIT
+   TECO many years ago when it was still a TTY-oriented editor (that
+   is, didn't make use of display screens).  By then, TECO at MIT had
+   become a highly display-oriented and is actually a language for
+   writing editors, rather than an editor.  Meanwhile, the outside
+   world's various versions of TECO remained almost the same as the
+   MIT version of the early 1970s.  DEC recently tried to discourage
+   its use, but an underground movement of sorts kept it alive.  DEC
+   later tried to force their hackers by administrative decision to
+   use a hacked up and generally lobotomized version of SOS instead of
+   TECO, and they revolted.
+
+   1990 update: TECO is now pretty much one with the dust of history,
+   having been replaced (both functionally and psychologically) almost
+   everywhere by GNU EMACS -- ESR.
+
+
+
+---------------------------------------------------------------------------
+From: mrc@Tomobiki-Cho.CAC.Washington.EDU (Mark Crispin)
+
+>I think there was a TECO compiler around also, maybe that was why
+>someone had put in an object code loader?
+
+Yes, XTEC, originally written by Jack Krupansky at Stevens Institute
+of Technology in 1974 and extensively hacked by me in 1975/1976.  I
+submitted it to the DECUS library, and subsequently other people
+hacked it as their favorite form of TOPS-10 TECO.
+
+XTEC is also the flavor of TECO installed on the WAITS operating
+system at Stanford University.
+
+XTEC compiled TECO code, although for all but the simplest operations
+the compiled code was a call to a library function.  Hence, something
+like .+5,ZKHT$$ (kill all characters from five characters after the
+current position until the end of the buffer, then type the entire
+buffer) would be compiled as:
+	MOVE ARG,DOT		; argument = current position
+	ADDI ARG,5		; argument += 5
+	MOVE SARG,BUFEND	; second argument = end of buffer position
+	JSP PC,$2KILL		; kill text, 2 argument form
+	SETZ ARG,		; argument = 0
+	MOVE SARG,BUFEND	; second argument = end of buffer position
+	JSP PC,$2TYPE		; type text, 2 argument form
+	JSP PC,$DONE		; done, never returns
+This would run 30 to 50 times faster than strictly interpreted TECO!
+
+Of course, if a syntax error was detected in the TECO code during
+compilation, the compilation and subsequent command execution would be
+aborted.  This was an amazing win, since the most common way to screw
+up in TECO was to forget an "I" in front of a text string to be
+inserted, thus causing that text to be executed as TECO commands.
+Some commands, such as "Y", were irreversable and capable of causing
+such damage to your text that your only recourse was to abort TECO and
+resume your editing from the beginning.  With this feature of XTEC,
+you were almost always saved since most non-trivial text strings had
+some sequence which ended up as being invalid TECO.
+
+XTEC was neat in other ways.  The compiler's code generator simply
+pushed the generated code on a stack; on the PDP-10, machine
+instructions were the same size as the memory addressing unit (a
+36-bit word), and furthermore stacks grew upwards in memory.  The XTEC
+kernel trapped stack overflow and responded by increasing the stack
+size and resuming the trapped instruction.  Consequently XTEC was only
+limited by address space and/or operating system memory allocation
+policies -- TOPS-10 required you to request memory by means of a
+system call more or less like sbrk(), and the early versions could
+deny the request due to hardware or administrative policy limitations.
+
+In the case of TECO macros (programs) stored in alternate buffers,
+XTEC would compile on demand, and remember the object code for later
+invocation.  Since TECO demanded that you could write (and rewrite)
+macros dynamically, XTEC knew that it would have to recompile if the
+macro changed since the last time it was compiled.
+
+XTEC never made the transition to TOPS-20, mostly because of EMACS and
+the fact that XTEC's hairy and quite conservative memory allocation
+was unnecessary and a burden on a demand-paged virtual memory system.
+
+Richard Stallman was aware of XTEC, due to me; I brought over a copy
+of XTEC to MIT for my use before I learned how to use the local TECO.
+Although he rejected the idea of a TECO compiler he was influenced by
+XTEC in other ways.  Original TECO only had single-character buffer
+names; XTEC's buffer names were six characters (a 36-bit word of 6-bit
+ASCII).  Stallman changed MIT TECO (the base of EMACS, and quite
+different from TOPS-10 TECO) to have ASCII-string buffer names; this
+made very large and complex macro packages possible for the first time
+(although earlier macro packages existed and worked around the
+limitations in various ways).  So, in a small way, I am partially
+responsible for the invention of EMACS.
+
+I can also take credit for one major change of EMACS' interface.  In
+the early versions of EMACS, loading and saving a file still involved
+going into a minibuffer of TECO commands.  I first suggested an
+interface in which the EMACS commands prompted you for a filename
+(with suitable defaulting) without making the user deal with TECO at
+all.  Amazingly (for me, since he and I had had many disagreements
+about EMACS' interface), Stallman implemented this change immediately.
+I have to say that time has shown that Stallman's stubborness on
+several points has been vindicated.  He's been right a lot more than
+he's been wrong.
+
+
+
+---------------------------------------------------------------------------
+From: siemsen@sol.usc.edu (Pete Siemsen)
+
+As the maintainer of the DECUS TECO Collection,  I sometimes get asked
+historical questions about TECO,  like "It came from MIT, didn't it?".
+I've heard rumors about a document about the history of TECO,  but I've
+never seen it.  Does such a thing exist?
+ 
+The only history I know of is the following comment from the source
+code to DEC's TECO version 39:
+ 
+; PDP-11 TECO STARTED OUT AS A BRUTE FORCE TRANSLATION OF OS/8
+;	TECO BY HANK MAURER AND BOB HARTMAN AT FORD OF COLOGNE,
+;	WEST GERMANY. OS/8 TECO CAME FROM A PROGRAM ORIGINALLY
+;	WRITTEN BY RUSSELL HAMM, WAY BACK WHEN... IT WAS MODIFIED
+;	FOR OS/8 BY THE O.M.S.I. CREW, SPEEDED UP, SHORTENED, AND
+;	MAKE PDP-10 COMPATIBLE BY RICHARD LARY OF DEC WITH ASSISTANCE
+;	FROM MARIO DENOBLI OF THE P?S. THE BRUTE FORCE TRANSLATION
+;	WAS FURTHER MUNGED AND ALTERED BY MARK BRAMHALL OF DEC TO
+;	BRING IT INTO MORE STANDARD PDP-11 CODE AND MAKE A HIGH/LOW
+;	SEGMENT SPLIT. MEMORY SIZE EXPANSION WAS ADDED. FURTHER PDP-10
+;	COMPATIBILITY WAS DONE BY ANTON CHERNOFF. VARIOUS NEW COMMANDS
+;	AND FEATURES WERE ADDED AGAIN. FINALLY HERE WE ARE... TECO-11!
+ 
+
+
+---------------------------------------------------------------------------
+From: merlyn@iwarp.intel.com (Randall L. Schwartz)
+
+O.M.S.I. was
+"Oregon Museum of Science and Industry", which had a pretty darn good
+computer department, until the funds dried up.  So they left as a
+group, went private, and formed "Oregon Minicomputer Software, Inc."
+(notice the same initials), which eventually got shortened to Oregon
+Software (still hanging out on the UUCP-net as oresoft.com, I think).
+Makers of super good Pascal, C, C++, Ada, and other compilers.
+
+
+
+---------------------------------------------------------------------------
+From: cosell@bbn.com (Bernie Cosell)
+
+Yes, the 'history' that Peter posted may be the only actual doc he has
+purporting to be the 'history of TECO', but I know for a fact that he
+knows better than to believe that stuff about the 'original' version.
+
+On the other hand, your 'then and now' is a bit excessive.  Dan was an
+MIT student at the time.  He graduated in 64 (or was it 65?) and went
+to work at BBN.  He worked at BBN for several years, and in 70 [?? 72?]
+went to work at DEC to cornerstone the TOPS-20 development [after doing
+Tenex for the PDP-10 at BBN].  Anyhow, at the time he did the first
+versions of TECO he was still a decade away from being a DEC employee.
+
+  /Bernie\
+
+
+
+---------------------------------------------------------------------------
+From: parke%star.enet.dec@decwrl.dec.com (Bill Parke)
+
+TECO (TAPE Editor and Corrector was originally written by an then and now
+DIGITAL Employee, Dan Murphy, for the PDP-1.  From this sprang many "brute
+force" translations including that for the PDP-8.
+
+I have the following from Dan Murphy, who wrote the original TECO
+for the PDP-1 and MIT.
+
+From:	MURPHY       "Dan Murphy" 11-OCT-1991
+Subj:	Re: For what does TECO stand. -- answer + folklore
+
+    Well, there are *some* questions I can answer.
+
+    The original TECO (PDP-1 version) buffered a page of text.  There was
+    never any version of TECO that buffered only a line -- one my main
+    reasons for writing TECO is that I detested line-oriented editors.
+
+    The original PDP-1 TECO used the FIO-DEC character set, as did other
+    PDP-1 software at the time.  It was a sixbit character set, with
+    upshift and downshift.  It had something called a "stop code" which
+    would cause paper tape readers to stop, and this was used as the
+    end-of-page marker for text.  Consequently, TECO would read the paper
+    tape to the stop code but did not put the stop code in the text buffer. 
+    Therefore, if you appended another page, the two pages would be
+    concatenated.  Similarly, whenever you wrote (punched) out the whole
+    buffer, TECO put a stop code after the text.
+    
+    The size of the buffer was limited to the size of memory less the size
+    of the program, and that left about 6000 characters on the original
+    4k-word PDP-1s -- enough for several typical pages of code or a big
+    page of text, but not enough for a whole file of any size.
+
+    When TECO was ported to the PDP-6, it was also changed to use ASCII,
+    with formfeed delimiting pages, and at that point, the formfeed started
+    being included in the text buffer as an editable character.  Later
+    PDP-1 versions were also modified to use ascii and include the
+    formfeed, including the one on BBN's PDP-1D that Bernie Cosell refers
+    to.
+
+
+    dlm
+
+--
+Bill Parke
+VMS Development			decwrl!star.enet.dec.com!parke
+Digital Equipment Corp		parke@star.enet.dec.com
+110 Spit Brook Road ZK03-2/Y05, Nashua NH 03063
+
+The views expressed are my own.
+---------------------------------------------------------------------------
+From: siemsen@usc.edu (Pete Siemsen) 23-Feb-1991
+
+Here's a brief history of TECO, cobbled together from rumors and
+forgotten documents.  Please feel free to post corrections.
+
+The original Emacs was a set of TECO macros written on top of MIT
+TECO, which ran under ITS (MIT's Incompatible Timesharing System) and
+TOPS-10 and TENEX on DEC PDP-10s, and later PDP-20s.  The name "Emacs"
+stands for "editing macros" originally written in TECO.
+
+As Emacs became popular, it became more important than the TECO
+"beneath" it.  Many Emacs users didn't even know TECO, or need to.
+Improvements to TECO were made specifically to improve Emacs.  One of
+these improvements was changing TECO from an interpreter to a
+compiler, which allowed TECO macros to execute fast enough to make
+Emacs bearable.  This TECO actually compiles interactively-typed
+command strings before executing them.  What fun!
+
+Portablility wasn't a concern during this effort.  When the time came
+to port Emacs to other machines, Stallman decided to use a better
+language than TECO for the base.  Even with all the improvements, TECO
+isn't a great language for writing large programs.  Most Emacs editors
+use some form of Lisp, which is one of the few langauges other than
+TECO with the flexibility needed by a customizable editor like Emacs.
+
+While all this was going on, people using various smaller DEC machines
+needed a fast, powerful editor, so they wrote TECOs for PDP-11s and
+PDP-8s.  These TECOs evolved separately, and had slightly different
+commands and features.  At some point Stan Rabinowitz started an
+effort in the DECUS TECO SIG to standardize them.
+
+Stan got the maintainers of TECO-10 (for PDPs running TENEX and TOPS),
+TECO-11 (for PDP-11s running RSX, RT-11 or RSTS/E), TECO-8 (for PDP-8s
+running OS/8) to bring ther programs closer together, but several
+somewhat minor differences still exist.  Later, Rick Murphy translated
+TECO-11 to TECO-32 for VAXes running VMS.  TECO-32 is functionally
+identical to TECO-11.  These TECOs are described by the "Standard TECO
+Manual" (used to be the PDP-11 TECO Manual), much of which was written
+by Stan and Mark Bramhall at DEC.  The manual is in the archive on
+usc.edu in the teco.doc file.  The version of the manual in the
+archive is more up-to-date than the one you'll get from DEC, because
+they haven't updated the documentation folks.
+
+The original TECO is far more powerful than the DEC versions.  It had
+many commands that make sense only on PDP-10s or under operating
+systems on 10s and 20s, and is too large to fit on machines with
+limited memory.  Some users of the original TECO consider it the only
+"real" TECO.
+
+The TECOs found in the archive on usc.edu are all based on the TECO
+described by the "Standard TECO Manual".  I've considered adding the
+original TECO and Emacs to the archive, but simply haven't gotten
+around to it.  Adding it would probably more than double the size of
+the archive.  At the risk is raising that hackles of its users, I
+suggest that it is of only historical interest to most people, since
+10s and 20s are becoming rare.
+
+So: Stallman's original Emacs doesn't have a chance of running with
+what Russ calls "more modern" TECOs.  The Emacs packages in the
+archive, which are much smaller than the original, are the only game
+in town.  If you are interested in Emacs, GNU Emacs is by far the best
+Emacs (and probably the best editor) in existence.

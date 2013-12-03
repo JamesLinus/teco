@@ -1,0 +1,35 @@
+Path: muncher.sequent.com!sequent!uunet!decwrl!deccrl!news.crl.dec.com!nntpd.lkg.dec.com!koning.enet.dec.com
+From: koning@koning.enet.dec.com (Paul Koning)
+Newsgroups: alt.lang.teco
+Subject: Re: Lets see some code
+Message-ID: <28630@nntpd.lkg.dec.com>
+Date: 7 Oct 91 21:06:02 GMT
+References: <58482@ut-emx.uucp> <10467@sail.LABS.TEK.COM> <8360@lectroid.sw.stratus.com> <1991Oct4.205820.21299@cco.caltech.edu>
+Sender: news@nntpd.lkg.dec.com
+Reply-To: koning@koning.enet.dec.com
+Organization: Digital Equipment Co., distributed systems architecture
+Lines: 22
+
+
+|>
+|>How perful is TECO? I want to see some code! Comeon, dont ignore me!!
+|>
+
+A nice short example -- this program will compute PI to lots of decimal
+places, printing them out one by one.  I have no idea how it worked (I once
+tried to figure it out and quickly got lost).
+
+The author, as far as I know, is either Stan Rabinowitz or Anton Chernoff.
+
+!-------------------------------- cut here ---------------------------------!
++0UN QN"E 20UN ' BUH BUV HK
+QN< J BUQ QN*10/3UI
+QI< \+2*10+(QQ*QI)UA B L K QI*2-1UJ QA/QJUQ
+QA-(QQ*QJ)-2\ 10@I// -1%I >
+QQ/10UT QH+QT+48UW QW-58"E 48UW %V ' QV"N QV^T ' QWUV QQ-(QT*10)UH >
+QV^T @^A/
+/
+!-------------------------------- cut here ---------------------------------!
+
+	paul
+

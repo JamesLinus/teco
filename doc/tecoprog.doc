@@ -1,0 +1,874 @@
+
+
+
+     -----------------------------------------------------------------
+               SUBJECT: Introduction to TECO for programmers
+
+               AUTHOR:  Allen Watson
+                       THE RECORD
+                       Hackensack, NJ 07602
+                       LAST MODIFIED 17-May-1985
+     -----------------------------------------------------------------
+
+
+Note: this file is the result of running RUNOFF on the file
+TECOPROG.ROF in the [.VMS.VAX85A.WATSON.TALKS] directory.
+Thanks, Allen!
+
+				Pete Siemsen 7-Aug-1989
+
+Introduction to TECO for programmers                            Page 1
+Revised as of 7 August 1989 15:49
+
+
+     This presentation is intended to introduce the  program  TECO  to
+     persons  who  are  unfamiliar  with  it,  and  in  particular  to
+     introduce it to programmers as a programming  language  and  text
+     processing tool.
+
+     ____  ____________  ____  ___  _______  ____  __  _  ____________     This  presentation  will  not  present  TECO  as  a  text-editing
+     ________  ________  __  __  _  _____  ____________  ____  _______     program,  although  it  is  a  fine,  full-fledged  text  editor.
+     Digital Equipment now provides two text editors with VMS --  EDT,
+     and  TPU.   When  used  with  DEC  terminals,  these  editors are
+     superior to TECO, and much easier  to  use,  for  general-purpose
+     editing.   People  who have learned in the past to edit with TECO
+     often prefer it to the newer editors because  TECO  has  so  many
+     features  that  the  newer  editors  lack.   In addition, TECO is
+     available on, I believe, every DEC operating  system,  and  works
+     with almost any terminal, including hard copy terminals.
+
+     When speaking to a new  user  of  DEC  computers  I  would  never
+     recommend  TECO  as  their primary text editor.  At the moment, I
+     prefer using EMACS to any of the other VMS editors;  I  have  not
+     yet  had  a  chance to try TPU.  (There will be a presentation on
+     the EMACS editors available tomorrow, May 28, at 6:00 PM.)
+
+     However, I would  and  do  encourage  everyone  who  works  as  a
+     programmer or system manager to learn some basics of TECO.  It is
+     a unique programming tool that continues to  be  used  throughout
+     the years, and if you have it in your armory of weapons, you will
+     be amazed at how often it will come in handy.
+
+     I would like to talk briefly about some of the reasons you should
+     learn  TECO  and  the  things I have found it useful for.  Then I
+     will present an overview of some TECO  commands  and  programming
+     techniques that are essential to making TECO work for you.
+
+
+
+     1  WHY SHOULD YOU LEARN TECO?
+
+          __     TECO is a text editing program, but it is  far  more  than  that.
+     Here  are a few of the reasons why I, and others, find TECO to be
+     an indispensible tool.
+
+
+
+     1.1  TECO Is A Text Processing Programming Language
+
+                               ________     TECO is a text processing language.  Programs can be  written  in
+     TECO language, stored, and recalled for repeated use.  These TECO
+     programs are  referred  to  as  "macros";  they  are  text  files
+     containing  TECO  commands,  and  by  convention they take a file
+     extension of ".TEC".  They can be created with TECO itself,  used
+     as a text editor, or with any other text editor.  Usually TECO is
+     used to create its own macros for several reasons:   TECO  macros
+     often  contain  characters that are difficult to input with other
+     editors; while you are in TECO you can test the  macros  you  are
+
+Introduction to TECO for programmers                            Page 2
+WHY SHOULD YOU LEARN TECO?
+
+
+     writing; and there are techniques built into TECO that make macro
+     creation easier.
+
+     TECO has all of the characteristics of  a  programming  language.
+     There  are  numeric  and  textual variables (called Q-registers).
+     You can perform the standard arithmetic operations on the numeric
+     variables.  Statements can be labelled, and a "go to" command can
+     transfer program control to  a  label.   Loops  can  be  written.
+     Logical tests can be performed, and IF-THEN-ELSE sequences can be
+     created and nested.  Files can be opened  and  closed.   Terminal
+     input  and  output are supported for interactive macros.  TECO is
+     powerful enough that it has been used in a commercial product  to
+     write  a  language  translator  between  DIBOL and COBOL (or vice
+     versa, I'm not sure which).
+
+     Let me give you a simple "for instance".  While working on an RSX
+     system,  I  became  frustrated at the HELP files.  In RSX help it
+     was never obvious if lower levels of help were available or  not.
+     I  used  TECO  to write a Help File Index program that would read
+     through  a  help  file  and  list  out  all  of  the  topics  and
+     sub-topics, appropriately indented, so that I could see what sort
+     of help was available in the  lower  levels.   When  I  ran  this
+     against some of the "standard" help files provided by DEC I found
+     that some of the level indexing was wrong, so that in normal  use
+     certain  information  would  never  be  offered  to the user!  It
+     turned out that my TECO macro was a great syntax checker for help
+     files.
+
+     Later I adapted that same macro to help me edit and  update  help
+     files I had generated.  You would pass the macro the subject line
+     you wanted to edit, just as you  would  give  it  to  HELP,  e.g.
+     "RUNOFF  SWITCHES  /UL";  the  macro would locate the appropriate
+     file, position you to the section in question, and open the  file
+     for  editing!   If  the  topic  was not found it would ask if you
+     wanted to add it to the help file.  One  version  of  this  macro
+     even let you do the editing with EDT!
+
+     If you do much handling of text files of any kind,  you  probably
+     find  yourself doing the same sort of thing over and over to file
+     after file.  TECO can be a great help to you in  this  area;  you
+     simply create a TECO macro to do what needs doing.
+
+
+
+     1.2  TECO Can Edit Weird Files
+
+     TECO also has the ability to edit almost any kind of file, of any
+     size,  including  files  containing  non-printing  characters; it
+     comes in handy for patching up files that  no  other  editor  can
+     handle.
+
+     For instance, TECO can handle files with  "records"  longer  than
+     512  bytes.  EDT will throw up if you try this.  When you need to
+     patch  up  some  strangely  formatted  file,  you  can  use   the
+
+Introduction to TECO for programmers                            Page 3
+WHY SHOULD YOU LEARN TECO?
+
+
+     Q-registers  and  such to calculate record offsets into the file,
+     change the part you need, and away you go.
+
+     Recently we had a situation where we had a print  file  that  was
+     many  thousands  of  blocks  long  which  had  to be printed in a
+     certain very short time.  Each page in the  file  was  a  record.
+     Using  TECO  we  were able to go into the file, bypass "n" pages,
+     write that out as a separate file, and eventually split the  file
+     into   three   pieces   that   we   printed   on  three  printers
+     simultaneously.   (This  was   before   Version   4.0   and   its
+     enhancements  to print queue restart operations.) Without TECO we
+     would have been stuck.
+
+
+
+     1.3  TECO Will Show Control And Escape Sequences
+
+     TECO has a "see all" mode that allows you to  display,  edit  and
+     correct  files  that  contain  non-printing  characters  such  as
+     Control-U or escape sequences.
+
+
+
+     1.4  TECO Has A "learn Mode"
+
+     Certain editing  jobs  are  tailor-made  for  TECO  macros.   For
+     instance,  you  have  a  large  set of files and want to create a
+     command procedure to do several  things  to  each  file:   delete
+     files  of  the  same  name from a target directory, copy the file
+     from one directory to another, change its ownership, etc.
+
+     By using DIRECTORY to create a file containing all  of  the  file
+     names you want to operate on, each on a single line, it is fairly
+     easy to manually input a sequence of  editing  commands  for  the
+     first  file name that produces the set of command lines you want,
+     and then tell TECO to remember that sequence in  a  macro.   Once
+     that  is  done,  all you have to do is execute the macro once for
+     each file name and you are done.
+
+     EDT can do this too, and so can EMACS, but the ease of  doing  it
+     in TECO cannot be beat.  If you goof, you can call the macro back
+     into your buffer, edit it right there, and stash it  away  again.
+     And  TECO  macros execute much faster than similar things in EDT.
+     With EDT, to store command in a key you have  to  use  line  mode
+     commands, which most of us do not know.  In TECO you use the same
+     commands in macros that you use  for  normal  editing.   Finally,
+     there is virtually no limit to the length of a TECO macro.
+
+     TECO has a "debug" mode, something like "SET VERIFY"  in  command
+     procedures, that will show you the TECO commands as they execute.
+     That has proved invaluable in debugging long macros.
+
+Introduction to TECO for programmers                            Page 4
+WHY SHOULD YOU LEARN TECO?
+
+
+     1.5  TECO Can Be Used From Hard Copy Terminals
+
+     Most VAX systems come with a hard copy console terminal  such  as
+     an  LA120.   Have  you  ever  been  in the computer room to run a
+     command procedure and found that it had a simple bug?   Have  you
+     ever  invoked EDT and then remembered that you don't know any EDT
+     line mode commands?  TECO can rescue you here, too.
+
+
+
+     1.6  Some Things We Use TECO For
+
+                                                                   ___     Here is a brief list of some things we have used TECO for at  The
+     ______     Record.   The  TECO macros for these operations are listed at the
+     end of this document.
+
+      -  strip trailing blanks from each line in a file
+      -  remove underscoring and printer  control  characters  from  a
+         Runoff output file
+      -  change lines to VT100 double-high lines
+      -  subject index for text files
+      -  Help file index
+      -  format a TECO macro for printing
+
+
+
+
+     2  TECO COMMANDS AND TECHNIQUES
+
+     This section will highlight  a  few  of  the  TECO  commands  and
+     techniques  that are most useful to writers of TECO macros.  I am
+     not going to spend much time talking about how to use TECO as  an
+     editor, or introducing the basic editing commands such as "T" for
+     typing a line, "L" for moving the pointer to  the  start  of  the
+     next  line,  or  "C"  for moving the pointer or cursor.  I assume
+     that you are all bright enough to pick those up on  your  own  if
+     you don't already know them.  There is an appendix to the handout
+     that lists the subset of "Beginner's TECO Commands"; you can also
+     purchase   the  TECO  reference  card  from  Digital,  Order  No.
+     AV-D530A-TK.
+
+
+
+     2.1  Essential Concepts
+
+     Before you begin programming in TECO you need to understand  some
+     essential  TECO  concepts:   the  command  terminator,  input and
+     output files and the  text  buffer,  the  TECO  pointer,  numeric
+     arguments to commands, and Q-registers.
+
+Introduction to TECO for programmers                            Page 5
+TECO COMMANDS AND TECHNIQUES
+
+
+     2.1.1  Double Escape As Command Terminator -
+
+     Every TECO command must be terminated with a double escape before
+     it  will  execute.  TECO will echo the escape on your screen as a
+     dollar sign.  Putting single Escapes between commands allows  you
+     to  type  several  commands on a line before ending with a double
+     escape, at which point all of the commands will execute.
+
+     Not all commands  require  a  terminator  when  you  string  them
+     together.   The  "C"  command  to  move the pointer, for example,
+     cannot have  any  trailing  argument  and  so  does  not  need  a
+     terminator.   Typing "3C2D$$", for example, will move the pointer
+     ahead three characters and then delete two characters.   You  can
+     put  an  escape terminator for clarity, e.g., "3C$2D$$" but it is
+                     _________ _________ _ _______ ____ __ ______ ____     not necessary.  Sometimes following a command with an escape will
+     _______ ___ _________ _______ _____ ____ _____ ______ __ ___ ____     prevent its resulting numeric value from being passed to the next
+     ________     command.
+
+
+
+     2.1.2  Input And Output And The Text Buffer -
+
+     TECO works with an input  file  and  an  output  file.   Text  is
+     brought from the input file (or input stream) into a text buffer,
+     manipulated there, and written to  the  output  file.   For  very
+     large  files,  TECO  may  not  be  able to fit all of it into its
+     buffer.  In such a case, the first buffer must be written to  the
+                                                            ___ ______     output file before the next bufferload is read in, and you cannot
+     ____ __ __ ___ ________ ______     back up to the previous buffer.  The buffer is  very  large;  for
+     most  files,  the  entire  file  fits in a single buffer.  But in
+     certain types of TECO programming you must be aware that,  first,
+     reaching the end of the buffer does not mean you have reached the
+     end of the file, and second, that once you have  moved  on  to  a
+     second  buffer  you  cannot  go  back to the first one unless you
+     close both input and output files, and re-open the file from  the
+     top  so that what was the output file becomes the new input file.
+     (Note:  a second input and output stream are possible,  but  that
+     comes under Advanced TECO Programming, not this lecture.)
+
+
+
+     2.1.3  The TECO Pointer -
+
+     TECO constantly maintains a "pointer" to its working location  in
+                                                    __     the  text  buffer.  The pointer does not point to a character, as
+                                                               _______     your cursor  does  on  the  screen;  rather,  it  points  between
+     characters.   The initial pointer location is zero.  That is, the
+                         ______     pointer is pointing before the first character.  When the pointer
+     location  is  10,  that  means  it  is  between  the 9th and 10th
+     character in the buffer.
+
+     The period character (".") symbolically represents  the  pointer.
+     If  you  type  a  command  ".="  (period,  equal) followed by two
+     escapes TECO will report the current value of the pointer to you.
+
+Introduction to TECO for programmers                            Page 6
+TECO COMMANDS AND TECHNIQUES
+
+
+     There  are a couple of other symbols related to the pointer:  "Z"
+     represents the last pointer position in the buffer  --  that  is,
+     the  end  of  the  buffer.   "B" represents the beginning pointer
+     position, which is the same as zero.  "H" represents  the  entire
+     buffer,  which could also be expressed as "B,Z" (you can think of
+     "H" as meaning "wHole").
+
+     The ability to know, numerically, the location  of  the  pointer,
+     and  to  save  that  value  in  a  Q-register  and  operate on it
+     arithmetically, is one of the key factors that gives TECO so much
+     power.
+
+     A couple of other numeric quantities that TECO  can  access  are:
+     ^Q  (control-Q  is  expressed  in  TECO notation with a preceding
+     caret, as are all control characters), which  is  the  number  of
+     characters  between  the  current pointer position and the end of
+     line, or in simple terms, if the pointer is at the  left  end  of
+     the line, the number of characters on the line.
+
+     It's important, also, to know how TECO interprets "end of  line".
+     To  TECO, and end of line is a Carriage Return followed by a Line
+     Feed.  This sequence actually occupies two character locations in
+     the  buffer.   If  your pointer is at the start of a line and you
+                                                        _______ ___ __     back up one character, the pointer will be sitting between the CR
+     ___  ___  __     and  the  LF,  not  yet  after the last character on the previous
+     line.  The  CR/LF  combination  is  not  included  in  the  count
+     returned by ^Q.  And remember, if you want to make two lines into
+                          ___     one, you must delete two characters to do so.
+
+     While I am discussing numeric quantities related to the  pointer,
+     let me throw in a couple of other very useful symbols that return
+     numeric values.   "A"  returns  the  numeric  ASCII  value  of  a
+     character.   "0A" will report on the character after the pointer;
+     "-1A" will return the value of the character before the  pointer.
+     The  number  preceding the "A" gives the offset from the pointer;
+     to examine the third character after the pointer  you  would  say
+     "2A".  To display that at the terminal you would say "2A=".
+
+     The backslash character (\) will return the numeric value of  the
+     digit  string  that is in the text buffer, following the pointer.
+     That is, if the pointer is sitting before the  "1"  of  the  text
+     "TOTAL:   123",  the backslash will give a numeric value of "123"
+     and will move the cursor past the digit string.   So  here  is  a
+     one-character command that does ASCII to decimal conversion!
+
+     The character "^N" is the end of file flag; it returns a value of
+     0  if  you have not reached end of file, and a value of -1 if you
+     have.  That is, if the last text read into the buffer encountered
+     the  end  of  the  input file, ^N is set to -1.  (You would check
+     this flag to see if there was more text waiting to be read in.)
+
+     There are other even more exotic numeric  quantities  in  various
+     flavors of TECO; check the manual.
+
+Introduction to TECO for programmers                            Page 7
+TECO COMMANDS AND TECHNIQUES
+
+
+     2.1.4  Arguments To TECO Commands -
+
+     Nearly all TECO commands accept numbers as arguments.  The effect
+     of  an  argument  to  a  command  differs for each command.  Many
+     commands take it as a Repeat Factor.  For example, "C" moves  the
+     pointer  forward one character, while "22C" will move the pointer
+     22 characters.  Other commands that  take  repeat  counts  are  T
+     (type  a  line), L (move down a line), R (move pointer backward),
+     and D (delete character).
+
+     A numeric argument to a search command is also a repeat count, in
+     a sense.  "S" means search, so that "Stext1" tells TECO to search
+                                                                ______     for the string "text1".  "2Stext1" tells TECO to find the  second
+     occurence of "text1".
+
+     Numeric arguments can be negative.  With commands that  move  the
+     pointer,  this  simply  tells  TECO to move the pointer backwards
+     (toward the top of the buffer).  For example, "-4D" means "delete
+     the  four characters that precede the pointer".  And a negative S
+     command?  Search backward, of course.
+
+     Numeric arguments can also be expressions.  "Aha!" you will  say,
+     if  you  are  a clever thinker.  "That's how you compare values."
+     Right you are.
+
+     For example, how do you check to see if a character in the buffer
+     is a capital A?  Well, if you are testing the character after the
+     pointer, you can get its ASCII value with "0A".  To "compare"  it
+     to  the  ASCII  value of a cap A (which is 65 decimal) you use an
+     expression like this:  (0A-65).  If the result of that expression
+     is  zero,  you've  got  an  "A".   We'll  talk  about conditional
+     operators in a moment, but  they  work  like  assembly  language,
+     where  you  can  basically  test  for zero, positive, or negative
+     results.  The command meaning "if equal to zero" is "E (a  double
+     quote  followed  by an E).  So to test if a character is a cap A,
+     you pass the expression to the  command  as  its  argument,  like
+     this:  (0A-65)"E.
+
+     Finally, some commands interpret arguments as ASCII values.   The
+     Insert  command (I), for example, does this.  To insert an Escape
+     into your buffer you type "27I", since 27 is the decimal value of
+     Escape.   And  very importantly, TECO will display that Escape in
+                    _ ______ ____     your buffer as a dollar sign.  In "see all" mode,  however,  TECO
+     will show it as a Pi sign.
+
+
+
+     2.2  Q-registers
+
+     Whole books could be written about Q-registers.  Lots  of  people
+     get  scared off by the term "Q-register" -- it sounds mysterious.
+     All  that  a  Q-register  is,  is  a  storage  area.   There  are
+     thirty-six of them, identified by the letters of the alphabet and
+     the ten digits.
+
+Introduction to TECO for programmers                            Page 8
+TECO COMMANDS AND TECHNIQUES
+
+
+     What makes Q-registers weird and powerful is that you  can  store
+     three  kinds  of  things in them:  you can store numbers, you can
+     store text, and  you  can  store  TECO  commands.   Really,  TECO
+     commands  are  just  a variant of text (although they look like a
+     sub-variant of a lost Tasmanian dialect).  Stranger yet, you  can
+                                                __ ___ ____ __________     store  both  a number and a string of text in the same Q-register
+     and TECO does not get confused.  I do, so  I  avoid  doing  this.
+     How  much  text  can  go into a Q-register?  As much as you want.
+     The only limit is the memory allocation limit of your  particular
+     system.
+
+     Q-registers can be used like EDT's cut and paste buffer  to  move
+     text  from one place to another.  You can copy things to them and
+     then repeatedly insert them elsewhere in the buffer.  Some exotic
+     forms of TECO commands even take a Q-register as an argument; you
+     can put a string of characters into a register, for example,  and
+     then do a search or match for any of the characters in the string
+     (an example could be searching for the next digit ...   but  TECO
+     has a special command for that).
+
+     And most powerful of all, when you put a series of TECO  commands
+     into  a  Q-register,  you  can  then  execute  the  entire set of
+     commands as a macro.
+
+
+
+     2.3  Editing With TECO
+
+     I said I would not spend much time talking about using TECO as an
+     editor, but I do want to say a few choice words.  First, there is
+     a full screen mode for TECO:  don't use it.  Compared  to  normal
+     TECO performance, EDT, or whatever, it is a dog.  The whole thing
+     is controlled by an enormous TECO macro called VTEDIT.TEC, so you
+     have  a text editor that is interpretive in the first place (each
+     command has to be interpreted as you enter it)  running  under  a
+     second  level  of  indirection  where every keystroke you type is
+     translated into a string of TECO commands that then  have  to  be
+     re-interpreted before anything happens.
+
+     If TECO is installed on your system and  you  simply  type  "TECO
+     filename", you will enter what I call "invisible edit mode".  You
+     are working in the dark.  You have to sprinkle your commands with
+     "T"  or  "V"  commands to type or view the current location.  You
+     have to work this way on a hard  copy  terminal  (and  TECO  will
+     force this mode when it detects a hard copy terminal), but it's a
+     hell of a way to use a screen when you have one.
+
+     The third choice, and my strong preference, is Scroll Mode.  TECO
+     divides  the  screen into two sections.  The top section displays
+     the file you are working on,  showing  the  pointer  location  by
+     means  of the cursor.  The bottom section is your scrolling area,
+     where you enter commands.  How do you get into this mode?  I have
+     met  many  people  who  use TECO from time to time who have never
+     discovered it.  The appropriate command to  enter  TECO  in  this
+
+Introduction to TECO for programmers                            Page 9
+TECO COMMANDS AND TECHNIQUES
+
+
+     mode is:
+
+          TECO/SCR:4 filename.ext
+
+     The ":4" specifies the number of lines of the screen you want for
+     your  scrolling  area;  the  rest  of  the screen will be used to
+     display your file.  Four lines  for  scroll  area  is  about  the
+     minimum you would want.  If you forget the switch on the original
+     command line, don't despair, you can  set  it  from  within  TECO
+     after  you  start  up.   The command to set up a four line scroll
+     area is "4,7:W".  What does it  mean?   Don't  ask;  take  it  on
+     faith.  Seriously, there are a whole series of ":W" commands that
+     set various video options.  Another  example  is  "-1,3:W"  which
+     turns on See All Mode, and "0,3:W" which turns it off.  Try these
+     out.  TECO a file, then enter "4,7:W"  and  watch  the  scrolling
+     region  set  up.  Try "-1,3:W" and see the line endings displayed
+     as little C/R characters; then use "0,3:W" and turn See  All  off
+     again.
+
+
+
+     2.4  How TECO Macros Can Be Used
+
+     A TECO macro can serve you in three ways:  you can call  it  into
+     play  as  a  canned  editing  routine while you are interactively
+     editing a file, or you can  write  it  as  a  standalone  editing
+     program.
+
+     In the first mode, you enter TECO normally, calling up a file for
+     editing,  and then at any time during the editing process you can
+     call on your macro with the "EI" command.  All  command  starting
+     with "E" have something to do with "editing"; "ER" I translate as
+     "Edit Read" -- it specifies the input file.  "EW" is "Edit Write"
+     and  names  the output file (which can have a different name from
+     the input file if you wish).  "EB" is "Edit Both" and gives input
+     and output files the same name.  "EI" stands for "Edit Indirect".
+     The file name you give is your "indirect command file"  for  TECO
+     to  execute  on your text.  Suppose you write a macro stored in a
+     file called CAPS.TEC that capitalizes a  word  of  text.   (We'll
+     write such a macro in a moment.) You get your pointer on the word
+     you want to capitalize and then type the command "EICAPS".   TECO
+     will  locate  the  file called CAPS.TEC in your current directory
+     (if it isn't in the default directory you will have to  give  the
+     directory name as part of the file specification in the command),
+     reads it, and executes any TECO commands it finds  in  the  file.
+     When  the  macro  is done executing, you are back in regular TECO
+     again.
+
+     If you are going to use the macro alot,  instead  of  reading  it
+     from a disk file every time, you can call it up once, stash it in
+     a Q-register, and run the macro from there.
+
+Introduction to TECO for programmers                           Page 10
+TECO COMMANDS AND TECHNIQUES
+
+
+     The second  way  of  using  macros  is  as  stand  alone  editing
+     programs.   You  can build in all the file opens and closes, I/O,
+     or whatever.  The DETAB macro is an example.  You  then  use  the
+     "MUNG"  command  to execute the macro, without ever entering TECO
+     in the normal way.  "MUNG" is said to stand for "macro  until  no
+     good"; it is really just a way to execute TECO and start directly
+     into execution of a macro.  In VMS, you can execute  a  macro  by
+     saying  "TECO @macname.tec" or by "MUNG macname"; either one will
+     work the same.
+
+
+
+     2.5  Easy Way To Write Short Macros
+
+     The easiest way to write short macros is by  using  the  Asterisk
+     command.   This  command  will  save  the  last  sequence of TECO
+     commands that you typed in a Q-register.
+
+                 ____ ______     Lets take a very simple example.  Suppose you are in Scroll  Mode
+     with  a  6-line scroll area.  That means that your screen will be
+     displaying 18 lines of your file.  To "page through" the file you
+     need to move the pointer down 17 lines at a time, providing a one
+     line overlap for continuity.  The command to do  this  is  "17L".
+     (Get  into  a file and try these things as you read to see how it
+     all works.)
+
+     Now, you get tired of typing "17L$$" all the time, so you  decide
+     to  make this a macro and put it into a Q-register.  Type "17L$$"
+     to be sure that was the last TECO command executed, and then type
+          ____ __ ______ __________ _________     "*M" with no escape characters following.  The Asterisk is one of
+     a very few "immediate action" commands in TECO  and  requires  no
+     terminator.   (Other  examples of immediate action are the Delete
+     key and the Line Feed, which moves one line at a time.) This  has
+     stored  your last command string, "17L$$", in Q-register "M".  If
+     you had typed "*A" it would have gone into Q-register A.
+
+              _______     Now, the command "M" is the "macro" command.   "MM"  says  "Macro
+     from  Q-register  M".   Typing  "MM$$"  will perform your 17-line
+     forward movement.  And since macros can take  arguments,  "-MM$$"
+     will move backward 17 lines.
+
+     You've just written your first TECO macro!
+
+     OK now, let's try writing a macro to change a word to  all  caps.
+     The  technique  you  will  use  here  is  to  keep trying command
+                                                   ___________     sequences until you get it right, and then -- immediately --  use
+     Asterisk  to save your hard labor in a Q-register.  I'll tell you
+     how to get it back out and save it in a file later on.
+
+     Let's decide on a few ground rules.  First, the macro will  start
+     wherever  the  pointer  is, move to the end of the word, and stop
+     there.  Second, end  of  word  is  defined  as  being  the  first
+     non-alphabetic character.
+
+Introduction to TECO for programmers                           Page 11
+TECO COMMANDS AND TECHNIQUES
+
+
+     In pseudo-code what we want is this:
+        If character after pointer is non-alpha, exit.
+        If character is lowercase, upcase it.
+        Move to next character.
+        Loop.
+
+     First, we want to examine the character after the pointer; that's
+     "0A",  if  you  remember, to get its ASCII value.  Now we need to
+     test that value to see if it is an alpha character.  The  command
+     to  do  that in TECO is "A.  All conditionals start with a double
+     quote and must be terminated with a single  quote.   For  example
+     the  string  0A"AC'  says "get ASCII value of the character after
+     the pointer, if it is alphabetic, move the pointer forward".  Try
+     typing  just  that  sequence,  storing  it  in  a  register  with
+     Asterisk, and then executing it several times as  a  macro  until
+     your  pointer  stops  moving.  Your cursor should be sitting on a
+     non-alpha character when it stops moving.
+
+     OK, now let's see if we can figure out how to  make  a  lowercase
+     character  into  uppercase.   In TECO what we must do is take the
+     ASCII value of the character, subtract 32 decimal from it, delete
+     the character that is there and insert the character with the new
+     ASCII value.  Put your pointer on any lowercase  letter  and  try
+     this sequence:
+
+          (0A-32)I$D$$
+
+                                                       _______     Remember  that  the  dollar  signs  are  really   escapes.    The
+     calculation  of  the  uppercase  ASCII  value  occurs between the
+     parentheses; that character is then inserted to the left  of  the
+     pointer, and finally the deletion takes place to the right of the
+     pointer.
+
+     Of course we want to do the subtraction only  if  the  letter  is
+     lower  case;  we  would get strange results "up-casing" uppercase
+     characters.  So we need another conditional:  "V tests a value to
+     see if it represents a lowercase letter.
+
+     Our string now becomes:
+
+          0A"V(0A-32)I$D'$$
+
+     Try this out, save it in a register,  and  try  it  on  different
+     characters; only lower case ones should change.
+
+     You noticed if you are trying this  as  we  go  that  the  cursor
+     "moves"  when  a letter is changed, because we insert on one side
+     of the pointer and delete on the other.   To  be  consistent,  we
+     should move the cursor even when the letter is not changed.  This
+     introduces the "else" clause of a conditional statement, which is
+     delineated  by a vertical bar character.  Here's the same command
+     sequence with a part added to move the cursor if  the  letter  is
+     not lower case:
+
+Introduction to TECO for programmers                           Page 12
+TECO COMMANDS AND TECHNIQUES
+
+
+          0A"V(0A-32)I$D|C'$$
+
+     Now let's combine the two tests so we are doing the following:
+
+          If alphabetic
+               If lower case
+                    change to upper, move cursor
+               else
+                    just move cursor
+          else
+               do nothing.
+
+     The TECO command sequence for this is:
+
+          0A"A0A"V(0A-32)I$D|C''$$
+
+     That's the guts of the macro; if you store that in a register and
+     repeat  it, it will move along through a word changing letters to
+     uppercase until it hits a non-alphabetic character.  All we  need
+     to do now is repeat it automatically.
+
+     There's one TECO language structure  we  need  to  introduce  for
+     repeating things:  the loop.  A loop in TECO is anything enclosed
+     in angle brackets, or less-than greater-than pairs.  An  argument
+     to a loop tells TECO how many times to execute it; a loop with no
+     argument executes indefinitely (or until you type  a  Control-C).
+     Try  a stupid simple one:  <V> will cause TECO to repeatedly type
+     the current line; ^C will abort it.  5<V> will type the line five
+     times  and  quit.   Importantly, an argument of zero or less will
+     not execute the loop at all.
+
+     The command to force an exit from a loop  is  "0;".   There's  no
+     logic to that, no mnemonic meaning to the semicolon.  That's just
+     the syntax.  And to complete talking about loops  (well  almost),
+     let  me  just  point  out that loops can be nested to ten or more
+     levels depending on your version of TECO.
+
+     All we need do now to complete our macro to uppercase words is to
+     put the loop control around what we have already done.  The "exit
+     loop" command is going to go into the "else" clause of the  outer
+     conditional.  The result looks like this:
+
+          <0A"A0A"V(0A-32)I$D|C'|0;'>$$
+
+     Looks like real gibberish, doesn't it?  That's  why  most  people
+     get scared off the minute they look at a TECO macro.  But because
+     we built it up step by step, I hope you understood it as we  went
+     along, and can now look at this and mentally decode it -- slowly,
+     perhaps, but still with comprehension.
+
+     If you type in this  sequence,  then  type  *A  to  put  it  into
+     Q-register  A,  you  have  stored away a macro to uppercase words
+     that you can execute simply by saying "MA$$".
+
+Introduction to TECO for programmers                           Page 13
+TECO COMMANDS AND TECHNIQUES
+
+
+     Well, I can hear you saying "I'm not going to try to type that in
+     every time I run TECO!  I'd never remember it all."
+
+     Ok, let's store this thing away in a file.  Assuming you have  it
+     in a Q-register (register A), what you can do is this.  Write out
+     the file you are currently editing (which is probably just a test
+     file)  by  using  the  "EC" command (Edit Close).  You are now in
+     TECO with no files open.  Type "GA" (for "get A").  The  contents
+     of  Q-register  A are inserted into your empty buffer.  Now, type
+     "EWUPCASE.TEC", which establishes your output  file.   Type  "EC"
+     again to close the file, and your macro is written to the file.
+
+     Want to try it out?  Read in  your  test  text  file  again  with
+     "EBtestfile$Y$$".   The  "Y" is the "yank" command to read in the
+     first bufferload.  Put your cursor on a word you  want  to  upper
+     case, and type "EIUPCASE".  Voila!
+
+     You notice the execution of a macro is a lot slower from a  file,
+     right?   To  load  macros from files into Q-registers you have to
+     reverse the process (except in TECO-10, which has  a  command  to
+     load  files directly into Q-registers).  Start TECO by reading in
+     your macro file and then use the "X" command (cut to  Q-register)
+     to  stash  them  away.  Clear your buffer of the macro stuff with
+     "HK" (kill everything), and then use EB to read in the  file  you
+     want  to  edit.   You  can  create a TECO.INI file that is a TECO
+     macro executed every time you start up TECO; this  TECO.INI  file
+     in  turn can read other macro files and stash them in Q-registers
+     for you.  The thing is incestuous.
+
+     One final trick with loop control in a macro.   If  you  pass  an
+     argument  to  a macro, the argument is given to the first command
+                   __ ____ ___ _____ __ _ ______ _____ ___ ___  ______     in the macro; it does not serve as a repeat count for the  entire
+     ______     macro.   But  there  is  a  way  to accomplish this.  Enclose the
+     entire macro in "loop brackets" (like the one we wrote above) and
+          _______     then precede the outermost loop with
+
+          +0URQR"E%R'QR
+
+     This sequence serves the purpose  of  either  using  your  repeat
+     count,  or  if none is given, guaranteeing a repeat count of one.
+     If a repeat count is given it is concatenated into the expression
+     so  it  becomes "repeat-count plus zero"; if none is given, it is
+     zero plus zero.  The UR command stores the  value  in  Q-register
+     "R".  The QR"E command tests for a value of zero in register "R";
+     if it is zero, %R increments register "R".  Finally,  QR  recalls
+     the value now in register "R" and uses it as the repeat count for
+     the loop.
+
+     Try this with something simple like a type command and see how it
+     works;  put  the above sequence into a macro followed by <T>, and
+     then try passing it repeat counts.
+
+Introduction to TECO for programmers                           Page 14
+TECO COMMANDS AND TECHNIQUES
+
+
+     2.6  Using Comments
+
+     Before you get into more complex macros you  should  learn  about
+     TECO  comments.  Even the above little macro, if you look at it a
+     year  or  two  after  writing  it,  could  totally  confuse  you.
+     Comments  make  the whole thing easier to follow.  A TECO comment
+     is anything, of any length, that occurs between  two  exclamation
+     marks.   By  convention  you  should  always  make the bracketing
+     characters into character pairs of "!  " and " !",  because  TECO
+     ______     labels are also delineated by exclamations.  Put spaces into your
+     comments, and no spaces into your labels; it makes things easier,
+     and  the  SQUISH  macro  for  removing  comments  recognizes this
+     convention.
+
+                                                             ____  ___     About spaces:  spaces are ignored in TECO strings, but  tabs  are
+     ___     not; a tab is a valid TECO command meaning "start inserting".  So
+     don't use tab characters for formatting your TECO macros!
+
+     One other thing about comments that could throw you  for  a  loop
+     (or out of one) if you don't know about it; arguments do not pass
+     through comments.  That is, if you  have  a  command  such  as  a
+     search  whose  result  code  you  want  to test, you cannot put a
+     comment between the search command and the test;  the  test  must
+     follow  immediately.  Same thing goes for spaces; although spaces
+     in TECO command sequences are ignored, at times  they  appear  to
+     nullify arguments.
+
+     Here then is our UPCASE.TEC macro, with comments:
+
+     +0URQR"E%R'QR<   !  UPCASE.TEC -- change lowercase !
+                      ! letters to upper case until a   !
+     ! non-alpha character is encountered.              !
+     ! Sequence above guarantees an argument of at      !  
+     ! least one to the main loop so that macro can be  !
+     ! invoked with repeat count.                       !
+     <
+       0A"A           ! Get character after pointer, test !
+                      ! for alpha                         !
+         0A"V         ! Test same for lowercase alpha     !
+           (0A-32)I$  ! Create uppercase of same, insert  !
+           D          ! Delete the lowercase version      !
+         |C'          ! Not lowercase, move past it.      !
+       |C0;'          ! Not alphabetic, move pointer and  !
+                      ! exit from loop                    !
+     >                ! End inner loop                    !
+     >$$              ! End loop, end macro.              !
+
+
+     This macro will execute as  it  is,  but  much  slower  than  the
+     uncommented  version  (remember, TECO is an interpreter).  That's
+     why the distribution kit of TECO comes with the SQUISH  macro  to
+     squish  TECO macros and remove comments.  I write short macros as
+     we did above, without comments, and then add the comments  later;
+     with  longer  macros,  I  write them with comments to keep myself
+
+Introduction to TECO for programmers                           Page 15
+TECO COMMANDS AND TECHNIQUES
+
+
+     aware of what's going on, and later squish them.  Normally I name
+     my  "source files" with a .TES extension and the squished version
+     with a .TEC extension.
+
+
+
+     2.7  Accepting File Names From The Terminal
+
+     The following eighteen pages are the original text for an article
+     by  me  published two years ago in the DEC Professional magazine.
+     It was written while I was an RSX-11M Plus user, and  the  macros
+     presented reflect that orientation.
+
+     I would especially call your attention to  the  UNFILL  macro  on
+     pages 7 and 8.  It demonstrates techniques for issuing prompts to
+     the terminal from a TECO macro,  and  accepting  input  from  the
+     terminal  in  response  to  the  prompts,  including handling the
+     Delete key to allow the user to correct his  entry  (which  ain't
+     easy!).   It  shows  how to write a macro to accept a random file
+     name and operate on that file.  And finally, in order to do this,
+     you  will  see  that  UNFILL  is  an  example of what you are not
+     supposed to do in good programs:  self-modifying code.  The  file
+     name  typed  in  is  combined  with TECO commands, stuffed into a
+     Q-register, and is  executed  from  there  as  a  macro.   UNFILL
+     actually  uses the text buffer as a scratch area to build another
+     macro, then puts it in the Q-register,  clears  the  buffer,  and
+     executes the macro it created.
+
+     One other thing I should point out:   when  writing  macros  like
+     this,  it is frequently less confusing to minimize the use of the
+     Escape character by using the "@" prefix to  most  commands  that
+     normally  require  a  terminating  escape.   "@"  allows  you  to
+     substitute another character for escape.  For example, to  search
+     for  "Mr.   Goodbar"  you  normally would use the command in this
+     form:
+
+          SMr.  Goodbar$
+
+     The "@" form  of  the  command  will  take  the  first  character
+     following  the "S" as the delimiter character in place of escape.
+     Thus, to do the same search:
+
+          @S/Mr.  Goodbar/

@@ -1,0 +1,393 @@
+@ei// hk 64ez
+gz j
+<::s ;>
+
+!If invoked as "tecon", no init!
+:@s/tecon/"s
+ hk 
+ @o/done/
+'
+
+!Skip command name arg!
+@:s/ /u0
+
+!Defaults: no +line_num, visual mode!
+-1ul0uv
+
+!If file name specified, edit that file!
+q0"s
+ <::s ;>
+ z-."g
+  !Chop off command name!
+  0k
+
+  <
+   !Interpret vi +line_num feature!
+   :@s/+/"s
+    \ul
+    @o/next/
+   '
+
+   !No visual mode!
+   :@s/-n/"s
+    -1uv
+    @o/next/
+   '
+
+   !All done with args!
+   0;
+
+   !Advance to next arg/filename!
+!next!
+   <::s ;>
+   0k
+  >
+
+  !Rest of buf is filename, if any!
+  z"g
+   hxz hk 
+   :ebqz "e
+    :erqz "e
+     File not found:  :g* 
+     
+     hkekex
+    '
+    %File  :g*  read-only... hit a key:  
+   '
+   y
+  '
+
+  !If line specified, jump to it!
+  ql"g
+   0jql-1l
+  '
+ '
+'
+
+!No file--clean up and start with empty!
+q0"u
+ 0j hk
+'
+
+!Turn on visual if requested!
+qv"e
+ 5,7:w 0,0xz
+'
+
+!ms--Block indent functions!
+!-1ms... delete indentation in range!
+!1ms... add indentation in range!
+@^Us/
+[q[r[0
++0u0
+0l
+.ur
+0uq
+qr-qp"L [r qpur ]p'
+qrj0l
+< 
+ q0"L 0-q0<0a-9"E 1d 1%q'>'
+ q0"G q0<@i#	# 1%q>0l'
+ qp-.;
+ -1l
+>
+q0"L qr-qqj | qr+qqj '
+]0]r]q
+/
+
+! mi--Interpolate reply from MH !
+@i\
+ [a
+ ! Read in file !
+ zj.ua
+ :@er/@/"f
+  Interpolation not possible
+   ^C
+ '
+ a
+
+ ! Trim headers off !
+ qaj
+ :@s/
+
+/"s
+  qa-.d
+ '
+ ! Put marker on each line of text !
+ <i>l.-z;>
+ ]a
+ zj
+
+ ! Move to head of text !
+ -@s/
+--------
+/0l
+
+ ! Insert white space for us to type into !
+ @i/
+
+
+/-2l
+\
+
+!* emacs.tec--do emacs-style motion and editing in TECO !
+!*  Clearly not a complete emulation, but sometimes convenient !
+!*  for moving about. !
+@^ue\
+
+!* No-echo, no-wait TTY, small window !
+1,7:w
+et#40et
+
+!* CR-LF flag!
+0ur
+
+!* endless loop for commands !
+<
+
+ !* Read key, update and sleep if none available !
+ ^tua qa+1"e 1w et-32et ^tua et#40et'
+
+ !* If text, insert and iterate !
+ qa-31"g qai f<'
+
+ !* Map delete key to erase !
+ qa-127"e -1d f<'
+
+ !* Else vector out to actions for supported keys !
+ qa@o/N,CA,CB,N,CD,CE,CF,N,CH,CI,CJ,CK,CL,CM,CN,CO,CP,N,N,N,N,N,CV,CW,N,N,N,ES/
+
+ !* Ignore !
+!N!
+ f<
+
+ !* Start of line !
+!CA!
+ 0l f<
+
+!CB!
+ 1r f<
+
+!CD!
+ 1d f<
+
+!CE!
+ 1l 2r f<
+
+!CF!
+ 1c f<
+
+!CH!
+ -1d f<
+
+!CI!
+ @i/	/ f<
+
+!CJ!
+ qr"e
+  .ub
+  0l .ua 
+  <::@s/^Es/;>
+  qa,.xa
+  qbj @i/
+/ ga
+ '
+ 0ur
+ f<
+
+!CK!
+ .ua 1l2r
+ qa-."e 1k | qa,.k'
+ f<
+
+!CL!
+ 0,7:w 1,7:w f<
+
+!CM!
+ 1ur
+ @i/
+/ f<
+
+!CN!
+ .ua 0l qa-.ub
+ 1l qb<::@s/^El/"s 1r 1; | 1c'> f<
+
+!CO!
+ .ua @i/
+/ qaj f<
+
+!CP!
+ .ua 0l qa-.ub 
+ -1l qb<::@s/^El/"s 1r 1; | 1c'>
+ f<
+
+!CV!
+ 24l f<
+
+!CW!
+ <."e 1;' r ::@s/^Es/; 1rd>
+ c <."e 1;' r ::@s/^Es/"s 1;' d>
+ f<
+
+!ES!
+ !* Get arg char for ESC !
+ ^tua qa+1"e 1w et-32et ^tua et#40et'
+
+ !* ESC-v goes back a page !
+ qa-118"e -24l f<'
+
+ !* ESC-< goes to top of file !
+ qa-60"e 0j f<'
+
+ !* ESC-> goes to bottom of file !
+ qa-62"e zj f<'
+
+ !* ESC-ESC--go back to TECO !
+ qa-27"e
+  5,7:w  et-40et
+  ^c
+ '
+
+ !* All others--no-op !
+ f<
+>
+
+\
+
+! mf--Fill paragraph point lies within, written all in TECO !
+! Optional arg is line length, default is 70 !
+@^uf\
++0ua
+qa"e
+ 70um
+|
+ qaum 
+'
+
+! Save text registers we scribble on !
+[t[u
+
+! Decimal !
+^D
+
+! Move to beginning of paragraph !
+
+! Move to first line which doesn't start with text !
+<
+ ! Move to start of line !
+ 0l
+
+ ! Leave loop when line doesn't start with alphanum !
+ ::@s/R/;
+
+ ! Back up another line !
+ -l
+
+ ! Exit at start of buffer !
+ ."e 1;'
+>
+
+! Don't include line unless it's just leading white space !
+."g
+ 0l::@s/S/"u 1l'
+'
+0l
+
+! Record position in QAn, also QSn so can delete when done !
+.ua
+qaus
+
+! Move to end of paragraph !
+1l
+<
+ ! Move to start of line !
+ 0l
+
+ ! Leave loop when line doesn't start with alphanum !
+ ::@s/R/;
+
+ ! Forward a line !
+ l
+>
+
+! End position in QBn !
+.ub
+
+! Avoid zero-length operations !
+qa-qb"e Empty paragraph specified
+ ^c'
+
+! Build the filled text right below the unfilled text, jumping back !
+! and forth !
+
+! QPn is our current output position !
+qbup
+! QCn is our current output column !
+0uc
+
+! Honor leading white space !
+qaj
+<
+ ::@s/S/;
+ 1r
+ ::@s/	/"s 8%c | 1%c 1c '
+>
+! Copy white space into output, skip past it !
+! Move text via QT.  Flag leading spaces with QD !
+qa-.ud
+qa,.xt
+.ua
+qpjgt.up
+
+! Set QU to white space chars !
+@^uu/ 	
+/
+
+! While words, assemble and fill !
+<
+ ! Skip leading white space !
+ qaj
+ <::@s/gu/;>
+ .ua
+
+ ! Walk across word, pull into QT !
+ <::@s/gu/"s 1r 1; | 1c'>
+ qa,.xt
+ .ua
+
+ ! If we're past end of range we want, terminate loop !
+ qa-qb;
+
+ ! If it won't fit on the line, terminate current line and start over !
+ qc+:qt+1-qm"g
+  qpj @i/
+/ 0uc .up
+ '
+
+ ! Add in our word, update column counter !
+ ! Inhibit word-seperating space for leading white in paragraph !
+ qpj
+ qc"g
+  qd"e
+   1r @::s/./"s @i/ / 1%c | 1c' ! Two spaces between sentences !
+   @i/ / 1%c ! Space between words !
+  | 0ud
+  '
+ '
+ gt .up
+ :qt%c
+>
+
+! Chop off unfilled text, add trailing newline !
+qpj
+@i/
+/
+qs,qbk
+qsj
+
+! Restore text registers we scribble on !
+]u]t
+\
+
+!done!
+
