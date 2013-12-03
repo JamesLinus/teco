@@ -4,6 +4,7 @@
 
 /* te_chario.c   character I/O routines   10/9/86 */
 #include <sys/types.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <termios.h>
 #include <errno.h>
