@@ -5,7 +5,9 @@
 /* te_chario.c   character I/O routines   10/9/86 */
 #include <sys/types.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <signal.h>
+#include <strings.h>
 #include <termios.h>
 #include <errno.h>
 #include "te_defs.h"
@@ -27,23 +29,6 @@ struct termios tty_orig, tty_new, tc_noint;
 /* character which back-deletes a character in interactive mode */
 char delchar = DEL;
 
-#ifndef DEBUG
-
-/* info structure for ^C interrupt */
-struct sigaction intsigstruc = {int_handler, 0, 0 };
-
-#ifdef SIGTSTP
-/* info structure for "stop" signal */
-struct sigaction stpsigstruc = {stp_handler, 0, 0 };
-#endif
-
-/* info structure for "hangup" signal	*/
-struct sigaction hupsigstruc = {hup_handler, 0, 0 };
-
-/* default structure for signal	*/
-struct sigaction nosigstr = {SIG_DFL, 0, 0 };
-#endif
-
 int inp_noterm;		/* nonzero if standard input is not a terminal */
 int out_noterm;		/* nonzero if standard output is not a terminal */
 
@@ -54,13 +39,29 @@ static sigset_t intrmask;	/* Mask w. interrupts disabled */
 static sigset_t suspmask;	/* Mask w. ^Z/^Y disabled */
 #endif
 
+static void qio_char(char c);
+
+/*
+ * sig()
+ *      Dispatch signal handling
+ */
+static void
+sig(int signum, void (*handler)(int))
+{
+    struct sigaction sa;
+
+    bzero(&sa, sizeof(sa));
+    sa.sa_handler = stp_handler;
+    sigaction(signum, &sa, 0);
+}
+
 /*
  * set tty (stdin) mode.  TECO mode is CBREAK, no ECHO, sep CR & LF
  * operation; normal mode is none of the above.  TTY_OFF and TTY_ON do this
  * absolutely; TTY_SUSP and TTY_RESUME use saved signal status.
  */
-setup_tty(arg)
-int arg;
+void
+setup_tty(int arg)
 {
     int ioerr;
     struct termios tmpbuf;
@@ -119,20 +120,20 @@ int arg;
 #ifndef DEBUG
         /* Handle signals */
 #ifdef SIGTSTP
-        sigaction(SIGTSTP, &stpsigstruc, 0);
+        sig(SIGTSTP, stp_handler);
 #endif
-        sigaction(SIGINT, &intsigstruc, 0);
-        sigaction(SIGHUP, &hupsigstruc, 0);
-#endif
+        sig(SIGINT, int_handler);
+        sig(SIGHUP, hup_handler);
+#endif /* DEBUG */
     } else {
         /* Restore to original state */
         tcsetattr(fileno(stdin), TCSAFLUSH, &tty_orig);
 #ifndef DEBUG
 #ifdef SIGTSTP
-        sigaction(SIGTSTP, &nosigstr, 0);
+        sig(SIGTSTP, SIG_DFL);
 #endif
-        sigaction(SIGINT, &nosigstr, 0);
-        sigaction(SIGHUP, &nosigstr, 0);
+        sig(SIGINT, SIG_DFL);
+        sig(SIGHUP, SIG_DFL);
 #endif
     }
 }
@@ -144,7 +145,8 @@ int arg;
 * set if lf_sw is nonzero, return the LF; else use the FNDELAY fcntl to
 * inquire of the input
 */
-gettty_nowait()
+int
+gettty_nowait(void)
 {
     char c;
     int err, cnt;
@@ -195,15 +197,15 @@ again:
     if (c == CR) {
         ++lf_sw;
     }
-    return(c);
+    return(c & 0xFF);
 }
 
 /* normal routine to get a character */
 
 int in_read = 0; /* flag for "read busy" (used by interrupt handler) */
 
-char
-gettty()
+int
+gettty(void)
 {
     int c;
 
@@ -286,8 +288,8 @@ int_handler()
  */
 sigset_t oldmask;	/* storage for previous signal mask */
 
-block_inter(func)
-int func;
+void
+block_inter(int func)
 {
 #ifndef DEBUG
     /* if arg nonzero, block interrupt */
@@ -307,14 +309,14 @@ stp_handler()
 {
     window(WIN_SUSP);		/* restore screen */
     setup_tty(TTY_SUSP);		/* put tty back to normal */
-    sigaction(SIGTSTP, &nosigstr, 0); 	/* put default action back */
+    sig(SIGTSTP, SIG_DFL); 	/* put default action back */
     sigprocmask(SIG_UNBLOCK, &suspmask, 0);	/* unblock "suspend" signal */
     kill(0, SIGTSTP);		/* suspend this process */
 
     /* ----- process gets suspended here ----- */
 
     /* restore local handling of "stop" signal */
-    sigaction(SIGTSTP, &stpsigstruc, 0);
+    sig(SIGTSTP, stp_handler);
     setup_tty(TTY_RESUME);			/* restore tty */
     buff_mod = 0;				/* set whole screen modified */
 
@@ -324,7 +326,7 @@ stp_handler()
         window(WIN_REDRAW);		/* force complete redraw */
         window(WIN_REFR);		/* and refresh */
     }
-    qio_char('\0');				/* wake up the input
+    qio_char('\0');				/* wake up the input */
 
     /* if not executing, prompt again and echo command string so far */
     if (exitflag) {
@@ -334,8 +336,8 @@ stp_handler()
 #endif
 
 /* simulate a character's having been typed on the keyboard */
-qio_char(c)
-    char c;
+static void
+qio_char(char c)
 {
     backpush = c;
 }
@@ -360,7 +362,8 @@ hup_handler()
 
 
 /* type a crlf */
-crlf()
+void
+crlf(void)
 {
     type_char(CR);
     type_char(LF);
@@ -369,9 +372,10 @@ crlf()
 
 
 /* routine to type one character */
-type_char(c)
-    char c;
+void
+type_char(char ch)
 {
+    int c = ((int)ch) & 0xFF;
 
     /* spacing char beyond end of line */
     if ((char_count >= WN_width) && (c != CR) && !(spec_chars[c] & A_L)) {

@@ -8,13 +8,17 @@
 
 #include "te_defs.h"
 
+static int srch_cmp(void);
+
 /*
  * routine to read in a string with string-build characters
  * used for search, tag, file name operations
  * returns 0 if empty string entered, nonzero otherwise
+ *
+ * lbuff - addr of q-reg header
  */
-build_string(lbuff)
-    struct qh *lbuff;		/* arg is addr of q-reg header */
+int
+build_string(struct qh *lbuff)
 {
     int count;			/* char count */
     struct buffcell *tp;	/* pointer to temporary string */
@@ -59,7 +63,7 @@ build_string(lbuff)
                     if (getcmdc(trace_sw) == term_char) {
                         ERROR((msp <= &mstack[0]) ?  E_UTC : E_UTM);
                     }
-                    c = mapch_l[cmdc];
+                    c = mapch_l[cmdc & 0xFF];
                     break;
 
                 /* take next char as upper case */
@@ -77,7 +81,7 @@ build_string(lbuff)
                     if (getcmdc(trace_sw) == term_char) {
                         ERROR((msp <= &mstack[0]) ?  E_UTC : E_UTM);
                     }
-                    switch (mapch_l[cmdc]) {
+                    switch (mapch_l[cmdc & 0xFF]) {
 
                     /* use char in q-reg */
                     case 'u':
@@ -167,8 +171,8 @@ build_string(lbuff)
  * called with pass/fail result from search
  * returns same pass/fail result
  */
-end_search(result)
-    int result;
+int
+end_search(int result)
 {
     /* if search failed */
     if (!result) {
@@ -201,7 +205,8 @@ static char *pmap;		/* pointer to character mapping table */
 static int locb;		/* reverse search limit */
 static int last_z;		/* end point for reverse search */
 
-setup_search()
+int
+setup_search(void)
 {
     int count;				/* string occurrence counter */
 
@@ -262,9 +267,11 @@ setup_search()
 /*
  * routine to do N, _, E_ searches:  search, if search fails, then get
  * next page and continue
+ *
+ * arg - 'n', '_', or 'e' to define which search
  */
-do_nsearch(arg)
-    char arg;	/* arg is 'n', '_', or 'e' to define which search */
+int
+do_nsearch(char arg)
 {
     int scount;		/* search count */
 
@@ -330,8 +337,11 @@ do_nsearch(arg)
  * routine to do "FB" search - m,nFB is search from m to n,
  * nFB is search from . to nth line
  * convert arguments to args of normal m,nS command
+ *
+ * returns search result
  */
-do_fb()				/* returns search result */
+int
+do_fb(void)
 {
     /* if two arguments */
     if (esp->flag1 && esp->flag2) {
@@ -364,8 +374,8 @@ do_fb()				/* returns search result */
  * routine to do search operation: called with search count as argument
  * returns -1 (pass) or 0 (fail)
  */
-do_search(count)
-    int count;
+int
+do_search(int count)
 {
     /* set approp. mapping table */
     pmap = (ctrl_x) ? &mapch[0] : &mapch_l[0];
@@ -388,7 +398,7 @@ do_search(count)
                         sm.dot++, sb.dot++) {
 
                     /* if search string char is "special" */
-                    if (spec_chars[sm.p->ch[sm.c]] & A_A) {
+                    if (spec_chars[sm.p->ch[sm.c & 0xFF] & 0xFF] & A_A) {
 
                         /*
                          * Then use expanded comparison
@@ -472,7 +482,7 @@ do_search(count)
                             sm.dot++, sb.dot++) {
 
                     /* if search string char is "special" */
-                    if (spec_chars[sm.p->ch[sm.c]] & A_A) {
+                    if (spec_chars[sm.p->ch[sm.c & 0xFF] & 0xFF] & A_A) {
 
                         /*
                          * Then use expanded comparison
@@ -582,13 +592,14 @@ do_search(count)
  * expanded search comparison
  * returns 1 if match, 0 if not
  */
-srch_cmp()
+static int
+srch_cmp(void)
 {
     int tq;					/* q-reg name for ^EGq */
     struct qp tqp;				/* pointer to read q reg */
 
     /* what is search character */
-    switch (mapch_l[sm.p->ch[sm.c]]) {
+    switch (mapch_l[sm.p->ch[sm.c & 0xFF] & 0xFF]) {
 
     /* match anything but following construct */
     case CTL('N'):
@@ -631,7 +642,7 @@ srch_cmp()
         /* skip the ^E */
         fwdc(&sm);
 
-        switch (mapch_l[sm.p->ch[sm.c]]) {
+        switch (mapch_l[sm.p->ch[sm.c & 0xFF] & 0xFF]) {
 
         /* match any alpha */
         case 'a':

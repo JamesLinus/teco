@@ -5,6 +5,7 @@
 /* te_exec2.c   process "E" and "F" commands   2/26/87 */
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include "te_defs.h"
@@ -29,16 +30,27 @@ struct outfiledata *outfile = &po_file;
 /* indirect command file pointer */
 FILE *eisw;
 
-/* process E commands */
+static int read_filename(int flag, char func);
+static int do_eq1(char *);
+static void write_stream(FILE *file,
+    struct qp *lbuf, int nchars, int crlf_sw);
+static int read_stream(FILE *file,
+    int *ff_found,
+    struct qp *lbuff, int *nchars, int endsw, int crlf_sw, int ff_sw);
+static int do_glob(struct qh *lbuff);
+static void do_en_next(void);
+static void find_endcond(char arg);
 
-do_e()
+/* process E commands */
+void
+do_e(void)
 {
     int c;					/* temps */
     int old_var;
     FILE *t_eisw;
 
     /* read next character and dispatch */
-    switch (mapch_l[getcmdc(trace_sw)]) {	
+    switch (mapch_l[getcmdc(trace_sw) & 0xFF]) {	
 
     /* numeric values */
     case 'd':				/* ED */
@@ -326,7 +338,7 @@ do_e()
             outfile->bak = ez_val & EZ_NOTMPFIL;
 
             /* Return status for colon */
-            if (esp->flag1 = colonflag) {
+            if ( (esp->flag1 = colonflag) ) {
                 esp->val1 = (outfile->fd ? -1 : 0);
             }
         }
@@ -370,7 +382,8 @@ do_e()
  * to execute a shell via 'execl'
  * routine returns -1 if success, 0 if error in fork
  */
-do_eq()
+int
+do_eq(void)
 {
     int t;
     int status;
@@ -411,7 +424,7 @@ do_eq()
         /* if this is the child */
         if (t == 0) {
             /* call the named Unix routine */
-            execl(pname, pname, "-c", &sysbuf.f->ch[0], 0);
+            execl(pname, pname, "-c", &sysbuf.f->ch[0], NULL);
 
             /* normally shouldn't get here */
             printf("Error in 'execl'\n");
@@ -471,9 +484,11 @@ do_eq()
  * Execute m,nEQtext$ command.  Run "text" as a Unix command that
  * receives its std input from chars m through n of teco's buffer.
  * Output from the command is placed in Q#.
+ *
+ * arg is pointer to shell name
  */
-do_eq1(shell)
-char *shell;			/* arg is pointer to shell name */
+static int
+do_eq1(char *shell)
 {
     int ff, pipe_in[2],
             pipe_out[2];		/* fork result and two pipes */
@@ -611,7 +626,7 @@ char *shell;			/* arg is pointer to shell name */
     close(pipe_out[1]);
 
     /* execute specified routine */
-    execl(shell, shell, "-c", &sysbuf.f->ch[0], 0);
+    execl(shell, shell, "-c", &sysbuf.f->ch[0], NULL);
     fputs("execl failed\n", stderr);
     exit(1);
 }
@@ -629,7 +644,8 @@ static char glob_cmd0[] = {
     'g', 'l', 'o', 'b', ' '
 };
 
-do_en()
+int
+do_en(void)
 {
     int t;
 
@@ -672,8 +688,8 @@ do_en()
  * argument is the address of a qh that gets the expanded string
  * argument->v gets set to the number of file specs found
  */
-do_glob(lbuff)
-    struct qh *lbuff;
+static int
+do_glob(struct qh *lbuff)
 {
     char glob_cmd[CELLSIZE+5];	/* "glob filespec" command string */
     int t;
@@ -769,13 +785,14 @@ do_glob(lbuff)
     close(glob_pipe[1]);
 
     /* execute the "glob" */
-    execl("/bin/csh", "csh", "-fc", glob_cmd, 0);
+    execl("/bin/csh", "csh", "-fc", glob_cmd, NULL);
     fputs("execl failed\n", stderr);
     exit(1);
 }
 
 /* routine to get next file spec from "EN" list into filespec buffer */
-do_en_next()
+static void
+do_en_next(void)
 {
     char c;
 
@@ -813,9 +830,8 @@ do_en_next()
  * flag nonzero => empty name clears filespec buffer
  * func is 'r' for ER or EB cmds, 'i' for EI, 'w' for EW
  */
-read_filename(flag, func)
-int flag;
-char func;
+static int
+read_filename(int flag, char func)
 {
     int i, t, expand;
     char c;
@@ -851,7 +867,7 @@ char func;
 
         /* make a temp buffer to glob filename into */
         temp_buff.f = NULL;
-        make_buffer(temp_buff);
+        make_buffer(&temp_buff);
 
         /* expand the file name */
         do_glob(&temp_buff);
@@ -933,19 +949,17 @@ char func;
 
 
 /* fetch or set variable */
-
-set_var(arg)
-int *arg;			/* argument is pointer to variable */
+void
+set_var(int *arg)
 {
     /* if an argument, then set the variable */
     if (esp->flag1) {
         /* if two arguments, then <clr>, <set> */
         if (esp->flag2) {
-                *arg = (*arg & ~esp->val2) | esp->val1;
+            *arg = (*arg & ~esp->val2) | esp->val1;
         } else {
-                /* one arg is new value */
-                *arg = esp->val1;
-
+            /* one arg is new value */
+            *arg = esp->val1;
         }
         esp->flag2 = esp->flag1 = 0;	/* consume argument */
     } else {
@@ -962,9 +976,8 @@ int *arg;			/* argument is pointer to variable */
  * if endsw < 0 stops if z > BUFF_LIMIT
  * returns -1 if read EOF, 0 otherwise
  */
-read_file(lbuff, nchars, endsw)
-    struct qp *lbuff;
-    int *nchars, endsw;
+int
+read_file(struct qp *lbuff, int *nchars, int endsw)
 {
     /* return if no input file open */
     if (!infile->fd) {
@@ -984,15 +997,12 @@ read_file(lbuff, nchars, endsw)
  * address of a switch to set if read ended with a FF, crlf_sw is lf->crlf
  * conversion, ff_sw indicates whether to stop on a form feed.
  */
-read_stream(file, ff_found, lbuff, nchars, endsw, crlf_sw, ff_sw)
-    FILE *file;
-    struct qp *lbuff;
-    int *ff_found, *nchars, endsw, crlf_sw, ff_sw;
+static int
+read_stream(FILE *file, int *ff_found,
+    struct qp *lbuff, int *nchars, int endsw, int crlf_sw, int ff_sw)
 {
-    int chr;
-    int crflag;
-    register struct buffcell *p;
-    register int c;
+    int chr, crflag, c;
+    struct buffcell *p;
 
     /* copy pointer locally */
     p = (*lbuff).p;
@@ -1057,9 +1067,8 @@ read_stream(file, ff_found, lbuff, nchars, endsw, crlf_sw, ff_sw)
  * arguments are qp to start of text, number of characters,
  * and an "append FF" switch
  */
-write_file(lbuff, nchars, ffsw)
-    struct qp *lbuff;
-    int nchars, ffsw;
+void
+write_file(struct qp *lbuff, int nchars, int ffsw)
 {
     if (!outfile->fd && (nchars)) {
         ERROR(E_NFO);
@@ -1078,10 +1087,8 @@ write_file(lbuff, nchars, ffsw)
  * Unix processes.  Arguments buff, nchars as above; file
  * is stream pointer, crlf_sw zero converts CRLF to LF
  */
-write_stream(file, lbuf, nchars, crlf_sw)
-    FILE *file;
-    struct qp *lbuf;
-    int nchars, crlf_sw;
+static void
+write_stream(FILE *file, struct qp *lbuf, int nchars, int crlf_sw)
 {
     char c;
     int crflag;
@@ -1098,7 +1105,7 @@ write_stream(file, lbuf, nchars, crlf_sw)
              * "no cr" mode, output the c.r.
              */
             if ((crflag) && ((c != LF) || crlf_sw)) {
-                    putc(CR, file);
+                putc(CR, file);
             }
             crflag = 0;
             putc(c, file);
@@ -1112,8 +1119,8 @@ write_stream(file, lbuf, nchars, crlf_sw)
 
 /*
  * Routine to kill output file: argument is pointer to an output file structure */
-kill_output(outptr)
-    struct outfiledata *outptr;
+void
+kill_output(struct outfiledata *outptr)
 {
     if (outptr->fd) {
         fclose(outptr->fd);
@@ -1130,7 +1137,8 @@ kill_output(outptr)
 /* name of file created to save buffer */
 char panic_name[] = "TECO_SAVED.tmp";
 
-panic()
+void
+panic(void)
 {
     /* if buffer nonempty and no file open, make one */
     if (!outfile->fd && z) {
@@ -1158,12 +1166,13 @@ panic()
 }
 
 /* do "F" commands */
-do_f()
+void
+do_f(void)
 {
     struct buffcell *delete_p;
 
     /* read next character and dispatch */
-    switch (mapch_l[getcmdc(trace_sw)]) {
+    switch (mapch_l[getcmdc(trace_sw) & 0xFF]) {
 
     /* back to beginning of current iteration */
     case '<':
@@ -1376,8 +1385,8 @@ do_fr:		/* entry from FN, F_, and FC */
  * pop iteration: if arg nonzero, exit unconditionally
  * else check exit conditions and exit or reiterate
  */
-pop_iteration(arg)
-    int arg;
+void
+pop_iteration(int arg)
 {
     /* if reiteration */
     if (!arg && (!cptr.il->dflag || (--(cptr.il->count) > 0)) ) {
@@ -1397,8 +1406,8 @@ pop_iteration(arg)
 
 
 /* find end of iteration - read over arbitrary <> and one > */
-
-find_enditer()
+void
+find_enditer(void)
 {
     int icnt;
 
@@ -1419,9 +1428,8 @@ find_enditer()
 }
 
 /* find end of conditional */
-char
-find_endcond(arg)
-    char arg;
+static void
+find_endcond(char arg)
 {
     int icnt;
 

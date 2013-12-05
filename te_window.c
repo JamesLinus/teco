@@ -61,14 +61,27 @@ char *curs_p;			/* pointer to cursor loc in window image */
 short curs_crflag;		/* flag that cursor is on a CR */
 short redraw_sw;		/* forces absolute redraw */
 
+static int w_setptr(int loc, struct qp *pp);
+static void window2(int arg);
+static void w_init(void);
+static int w_lines(int n, struct qp *ps, struct qp *pd);
+static void window0(int num), window1(void),
+    window1_abs(void), window1_inc(int wd), window1_after(void);
+static void w_scroll(int count), w_rmcurs(void);
+static void vtm(int);
+static void w_move(short y, short x);
+static void w_makecurs(char wc, short crflag);
+static void w_type(char c, int m);
+static int w_overflow(int wd);
+static void w_ebol(void);
+
 /*
  * routine to perform simple scope operations
  * (an attempt to concentrate VT-100 specific things in one place)
  */
-vt(func)
-    int func;
+void
+vt(int func)
 {
-    short t;
     switch (func)
     {
     case VT_CLEAR:			/* clear screen */
@@ -166,8 +179,11 @@ int win_data[] = {
 /* # of lines in a window */
 int window_size;
 
-do_window(ref_flag)
-    int ref_flag;		/* nonzero forces "refresh" operation */
+/*
+ * ref_flag - nonzero forces "refresh" operation
+ */
+void
+do_window(int ref_flag)
 {
     int i;
 
@@ -241,7 +257,7 @@ do_window(ref_flag)
  */
 #ifdef SIGWINCH
 void
-recalc_tsize()
+recalc_tsize(int sig)
 {
     int rows, cols;
 
@@ -267,14 +283,15 @@ recalc_tsize()
     window(WIN_REFR);
 }
 #else
-recalc_tsize()
+void
+recalc_tsize(int)
 {
 	/* No-op */
 }
 #endif
 
-set_term_par(lines, cols)
-    int lines, cols;
+void
+set_term_par(int lines, int cols)
 {
 #ifdef SIGWINCH
     struct sigaction act;
@@ -314,8 +331,8 @@ set_term_par(lines, cols)
  */
 int last_dot = -1;				/* last dot location */
 
-window(arg)
-    int arg;
+void
+window(int arg)
 {
     int i;
 
@@ -409,8 +426,8 @@ window(arg)
  * used for ev, es, and <BS> or <LF> as immediate commands
  * starting char position is in w_p1; argument is number of lines
  */
-window0(num)
-    int num;
+static void
+window0(int num)
 {
     int wi;
     char wc;
@@ -421,7 +438,7 @@ window0(num)
 
         /* if about to exceed width */
         if ((char_count >= WN_width) &&
-                (wc != CR) && !(spec_chars[wc] & A_L)) {
+                (wc != CR) && !(spec_chars[wc & 0xFF] & A_L)) {
 
             /* truncate: don't print this */
             if (et_val & ET_TRUNC) {
@@ -526,9 +543,10 @@ w0_noprint:
  * if scroll mode is enabled, the VT100 screen is split and only the upper part
  * is used by this routine; else the whole screen is used
  */
-window1()
+static void
+window1(void)
 {
-    int i, j, m, lflag;
+    int i, j, m, lflag = 0;
 
     /* return if nothing has changed */
     if (!redraw_sw && (dot == last_dot) && (buff_mod == INT_MAX))
@@ -735,7 +753,8 @@ window1()
 }
 
 /* routine to redraw screen absolutely */
-window1_abs()
+static void
+window1_abs(void)
 {
     int i, j;
 
@@ -779,10 +798,13 @@ window1_abs()
     }
 }
 
-/* redraw screen incrementally */
-
-window1_inc(wd)
-    int wd;		/* argument is earliest change */
+/*
+ * redraw screen incrementally
+ *
+ *  int wd;		argument is earliest change
+ */
+static void
+window1_inc(int wd)
 {
     short temp_y;
 
@@ -825,9 +847,10 @@ window1_inc(wd)
 }
 
 /* routine to move window downwards: scroll up or redraw as appropriate */
-window1_after()
+static void
+window1_after(void)
 {
-    int i, lflag;
+    int i, lflag = 0;
 
     /* remove old cursor */
     w_rmcurs();
@@ -878,7 +901,8 @@ window1_after()
 }
 
 /* routine to remove the existing cursor */
-w_rmcurs()
+static void
+w_rmcurs(void)
 {
     /* if there was a cursor */
     if (!curs_c) {
@@ -908,8 +932,8 @@ w_rmcurs()
  * rewrites to end of screen if arg = 0, or only until line with cursor if
  * arg = 1
  */
-window2(arg)
-    int arg;
+static void
+window2(int arg)
 {
     int wdot;
     char wc;
@@ -926,7 +950,7 @@ window2(arg)
         wc = w_p1.p->ch[w_p1.c] & 0177;
 
         /* save "this is char at dot", "on line with dot" */
-        if (dflag = (wdot == dot)) {
+        if ( (dflag = (wdot == dot)) ) {
             if (arg) {
                 arg = -1;
             }
@@ -1239,8 +1263,8 @@ w2_exit:
 }
 
 /* routine to move cursor to current location and then call vt */
-vtm(arg)
-    int arg;
+static void
+vtm(int arg)
 {
     w_move(curr_y, curr_x);
     vt(arg);
@@ -1250,9 +1274,8 @@ vtm(arg)
  * routine to set reverse video and save cursor location
  * first argument is char at cursor, 2nd is value for curs_crflag
  */
-w_makecurs(wc, crflag)
-    char wc;
-    short crflag;
+static void
+w_makecurs(char wc, short crflag)
 {
     /* save cursor coord and char */
     curs_y = curr_y;
@@ -1274,7 +1297,8 @@ w_makecurs(wc, crflag)
  * returns nonzero if at end of screen, zero otherwise
  * arg is current character position
  */
-w_overflow(wd)
+static int
+w_overflow(int wd)
 {
     /* last character was end of this line */
     wlp[curr_y]->end = wd-1;
@@ -1316,9 +1340,8 @@ w_overflow(wd)
  * routine to type one character:  arguments are char and a
  * "mark" bit.  If mark is set, the char is always retyped
  */
-w_type(c, m)
-    char c;
-    int m;
+static void
+w_type(char c, int m)
 {
     char *p;
 
@@ -1339,7 +1362,8 @@ w_type(c, m)
 }
 
 /* initialize display image */
-w_init()
+static void
+w_init(void)
 {
     short i, j;
 
@@ -1362,8 +1386,8 @@ w_init()
  * move terminal cursor to stated y, x position
  * uses incremental moves or absolute cursor position, whichever is shorter
  */
-w_move(y, x)
-    short y, x;
+static void
+w_move(short y, short x)
 {
     short i;
 
@@ -1419,8 +1443,8 @@ w_move(y, x)
 }
 
 /* scroll screen: argument is count: + up, - down */
-w_scroll(count)
-    int count;
+static void
+w_scroll(int count)
 {
     int i;
     struct w_line *p[W_MAX_V];	/* temp copy of pointer array */
@@ -1455,7 +1479,8 @@ w_scroll(count)
  * clear line to left of curr_x
  * if some chars nonblank, does erase from start of line
  */
-w_ebol()
+static void
+w_ebol(void)
 {
     short i, j;
 
@@ -1473,10 +1498,12 @@ w_ebol()
 /*
  * routine to set a pointer to a given location (like set_pointer)
  * returns nonzero if a text buffer exists, otherwise 0
+ *
+ *  int loc		location
+ *  struct qp *pp	address of pointer
  */
-w_setptr(loc, pp)
-    int loc;			/* location */
-    struct qp *pp;			/* address of pointer */
+static int
+w_setptr(int loc, struct qp *pp)
 {
     int i;
 
@@ -1496,12 +1523,14 @@ w_setptr(loc, pp)
  * points to a qp at the current pointer, dest, if nonzero,
  * it points to a qp where the result is to go.
  * routine returns actual number of display lines
+ *
+ *  int n		number of lines
+ *  struct qp *ps, *pd	source, destination qp's
  */
 struct qp w_lines_p;	/* to compute # of display lines in -N lines */
 
-w_lines(n, ps, pd)
-    int n;				/* number of lines */
-    struct qp *ps, *pd;	/* source, destination qp's */
+static int
+w_lines(int n, struct qp *ps, struct qp *pd)
 {
     struct buffcell *tp;	/* local copy of the qp */
     int tc, tdt, tn;
@@ -1516,7 +1545,7 @@ w_lines(n, ps, pd)
     if (n > 0) {
         /* forward over N line separators */
         for (tcnt = tl = tn = 0; (tn < n) && (tdt < z); tdt++) {
-            if (spec_chars[ tch = tp->ch[tc] ] & A_L) {
+            if (spec_chars[ (tch = tp->ch[tc & 0xFF]) & 0xFF ] & A_L) {
                 /* count separators */
                 ++tl, ++tn;
             } else if (!(et_val & ET_TRUNC)) {
@@ -1579,7 +1608,7 @@ w_lines(n, ps, pd)
                 tp = tp->b;
                 tc = CELLSIZE -1;
             }
-            if (spec_chars[tp->ch[tc]] & A_L) {
+            if (spec_chars[tp->ch[tc & 0xFF] & 0xFF] & A_L) {
                 --tn;
             }
         }

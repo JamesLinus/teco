@@ -2,6 +2,7 @@
  * TECO for Ultrix   Copyright 1986 Matt Fichtenbaum
  * This program and its components belong to GenRad Inc, Concord MA 01742
  * They may be copied if this copyright notice is included
+ */
 
 /* te_utils.c utility subroutines  10/28/85 */
 
@@ -47,8 +48,8 @@ get_bcell()
 
 
 /* free a list of buffcells */
-free_blist(p)
-    struct buffcell *p;
+void
+free_blist(struct buffcell *p)
 {
     struct buffcell *t;
 
@@ -65,8 +66,8 @@ free_blist(p)
 }
 
 /* free a list of buffcells to the "delayed free" list */
-dly_free_blist(p)
-    struct buffcell *p;
+void
+dly_free_blist(struct buffcell *p)
 {
     struct buffcell *t;
 
@@ -116,8 +117,8 @@ get_dcell()
 
 /* build a buffer:  called with address of a qh */
 /* if no buffer there, get a cell and link it in */
-make_buffer(p)
-    struct qh *p;
+void
+make_buffer(struct qh *p)
 {
     if (!(p->f)) {
         p->f = get_bcell();
@@ -129,8 +130,8 @@ make_buffer(p)
 /* argument is the address of a qp */
 /* fwdc, backc return 1 if success, 0 if beyond extremes of buffer) */
 /* fwdcx extends buffer if failure */
-fwdc(arg)
-    struct qp *arg;
+int
+fwdc(struct qp *arg)
 {
     /* test char count for max */
     if ((*arg).c >= CELLSIZE-1) {
@@ -153,8 +154,8 @@ fwdc(arg)
     return(1);
 }
 
-fwdcx(arg)
-    struct qp *arg;
+int
+fwdcx(struct qp *arg)
 {
     /* test char count for max */
     if ((*arg).c >= CELLSIZE-1) {
@@ -174,8 +175,8 @@ fwdcx(arg)
     return(1);
 }
 
-backc(arg)
-    struct qp *arg;
+int
+backc(struct qp *arg)
 {
     /* test char count for min */
     if ((*arg).c <= 0) {
@@ -199,9 +200,8 @@ backc(arg)
 
 /* set up a pointer to a particular text buffer position */
 /* first arg is position, 2nd is addr of pointer */
-set_pointer(pos, ptr)
-    int pos;
-    struct qp *ptr;
+void
+set_pointer(int pos, struct qp *ptr)
 {
     struct buffcell *t;
     int i;
@@ -292,11 +292,17 @@ getcmdc(trace)
  * peek at next char in command string, return 1 if it is equal
  * (case independent) to argument
  */
-peekcmdc(arg)
-	char arg;
+int
+peekcmdc(char ch)
 {
-    return(
-            ((cptr.dot < cptr.z) &&
-            (mapch_l[cptr.p->ch[cptr.c]] == mapch_l[arg])) ? 1 : 0
-    );
+    int c = ((int)ch) & 0xFF, c2;
+
+    if (cptr.dot >= cptr.z) {
+        return(0);
+    }
+    c2 = mapch_l[cptr.p->ch[cptr.c & 0xFF] & 0xFF] & 0xFF;
+    if (mapch_l[c] != mapch_l[c2]) {
+        return(0);
+    }
+    return(1);
 }

@@ -7,7 +7,8 @@
 #include "te_defs.h"
 #include <time.h>
 
-exec_cmdstr()
+void
+exec_cmdstr(void)
 {
     int digit_sw;
     struct tm *timeptr;
@@ -57,7 +58,7 @@ exec_cmdstr()
         /* not a digit: dispatch on character */
         } else {
             digit_sw = 0;
-            switch (mapch_l[cmdc]) {
+            switch (mapch_l[cmdc & 0xFF]) {
 
             /* characters ignored */
             case CR:

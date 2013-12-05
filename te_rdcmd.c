@@ -9,7 +9,10 @@
 
 int ccount;				/* count of chars read in */
 
-int read_cmdstr()
+static int find_lasteol(void);
+
+int
+read_cmdstr(void)
 {
     int c;				/* temporary character */
     int i;				/* temporary */
@@ -347,7 +350,8 @@ prompt:
  * back up to find most recent CR or LF in entered command string
  * return number of chars backed up
  */
-find_lasteol()
+static int
+find_lasteol(void)
 {
     int i;
 
@@ -366,8 +370,8 @@ find_lasteol()
 /*
  * retype command string: entirely (arg = '*') or most recent line (arg = ' ')
  */
-retype_cmdstr(c)
-    char c;
+void
+retype_cmdstr(char c)
 {
     int i;
 

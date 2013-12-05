@@ -17,14 +17,13 @@
  *    n is the returned number of chars moved
  * max is the maximum number of chars to move
  */
-movenchars(from, to, n)
-    struct qp *from, *to;
-    int n;
+void
+movenchars(struct qp *from, struct qp *to, int n)
 {
     struct buffcell *fp, *tp;	/* local qp ".p" pointers */
     int fc, tc;			/* local qp ".c" subscripts */
 
-    /* No-op *?
+    /* No-op */
     if (n == 0) {
         return;
     }
@@ -75,12 +74,19 @@ movenchars(from, to, n)
     to->c = tc;
 }
 
-moveuntil(from, to, c, n, max, trace)
-    struct qp *from, *to;	/* address of buffer pointers */
-    char c;             	/* match char that ends move */
-    int *n;			/* pointer to returned value */
-    int max;    		/* limit on chars to move */
-    int trace;  		/* echo characters if nonzero */
+/*
+ * moveuntil()
+ *      (Comment above)
+ *      
+ *  struct qp *from, *to;	address of buffer pointers
+ *  char c;             	match char that ends move
+ *  int *n;			pointer to returned value
+ *  int max;    		limit on chars to move
+ *  int trace;  		echo characters if nonzero
+ */
+void
+moveuntil(struct qp *from, struct qp *to,
+    char c, int *n, int max, int trace)
 {
     struct buffcell *fp, *tp;	/* local qpr ".p" pointers */
     int fc, tc;			/* local qpr ".c" subscripts */
@@ -137,8 +143,8 @@ moveuntil(from, to, c, n, max, trace)
 
 /* routine to get numeric argument */
 /* get a value, default is argument */
-get_value(d)
-    int d;
+int
+get_value(int d)
 {
     int v;
 
@@ -151,8 +157,8 @@ get_value(d)
 
 /* routine to convert a line count */
 /* returns number of chars between dot and nth line feed */
-lines(arg)
-    int arg;
+int
+lines(int arg)
 {
     int i, c;
     struct buffcell *p;
@@ -181,7 +187,7 @@ lines(arg)
             /* if line sep found */
             if ( (ez_val & EZ_NOVTFF) ?
                     (p->ch[c] == LF) :
-                    (spec_chars[p->ch[c]] & A_L) ) {
+                    (spec_chars[p->ch[c & 0xFF] & 0xFF] & A_L) ) {
                 ++arg;
             }
         }
@@ -200,7 +206,7 @@ lines(arg)
         for (i = dot; (arg > 0) && (i < z); i++) {
             if ( (ez_val & EZ_NOVTFF) ?
                     (p->ch[c] == LF) :
-                    (spec_chars[p->ch[c]] & A_L) ) {
+                    (spec_chars[p->ch[c & 0xFF] & 0xFF] & A_L) ) {
                 --arg;
             }
 
@@ -221,10 +227,11 @@ lines(arg)
  * if just one arg, then n lines (default 1)
  * sets a pointer to the beginning of the specd
  * string, and a char count value
+ *
+ * When d is nonzero: leave dot at start
  */
-line_args(d, p)
-    int d;			/* nonzero: leave dot at start */
-    struct qp *p;
+int
+line_args(int d, struct qp *p)
 {
     int n;
 
@@ -299,15 +306,14 @@ line_args(d, p)
 
 /* convert character c to a q-register spec */
 /* fors ("file or search") nonzero = allow _ or * */
-getqspec(fors, c)
-    int fors;
-    char c;
+int
+getqspec(int fors, char c)
 {
     if (isdigit(c)) {
         return(c - '0' + 1);
     }
     if (isalpha(c)) {
-        return(mapch_l[c] - 'a' + 11);
+        return(mapch_l[c & 0xFF] - 'a' + 11);
     }
 
     /*
@@ -339,7 +345,8 @@ getqspec(fors, c)
  * insert2() copies rest of buffer
  */
 struct buffcell *insert_p;
-insert1()
+void
+insert1(void)
 {
     int nchars;			/* number of chars in cell */
 
@@ -366,8 +373,8 @@ insert1()
 }
 
 /* count is the number of chars added */
-insert2(count)
-    int count;
+void
+insert2(int count)
 {
     /* put the new cell where the old one was */
     aa.p->b->f = insert_p;
@@ -399,8 +406,8 @@ insert2(count)
  * subroutine to delete n characters starting at dot
  * argument is number of characters
  */
-delete1(nchars)
-    int nchars;
+void
+delete1(int nchars)
 {
     /* 0 chars is a nop */
     if (!nchars) {
@@ -453,7 +460,8 @@ delete1(nchars)
  * routine to process "O" command
  */
 struct qh obuff;		/* tag string buffer */
-do_o()
+void
+do_o(void)
 {
     int i, j;		/* i used as start of tag, j as end */
     int p,			/* pointer to tag string */
@@ -556,8 +564,8 @@ do_o()
                         }
 
                         /* compare */
-                        if (mapch_l[cmdc] !=
-                                mapch_l[obuff.f->ch[p]]) {
+                        if (mapch_l[cmdc & 0xFF] !=
+                                mapch_l[obuff.f->ch[p] & 0xFF]) {
                             break;
                         }
                     }
@@ -593,9 +601,13 @@ char skipto(arg)
 
     for (atsw = 0; ;) {
         /* read until something interesting found */
-        while (!(ta = spec_chars[skipc = getcmdc(0)] &
-                (A_X | A_S | A_T | A_Q))) {
-            ;
+        for (;;) {
+            skipc = getcmdc(0);
+            ta = spec_chars[skipc & 0xFF];
+            ta &= (A_X | A_S | A_T | A_Q);
+            if (ta) {
+                break;
+            }
         }
 again:
         /* if command takes a Q spec, skip the spec */
@@ -614,11 +626,14 @@ again:
 
         /* other special char */
         if (ta & A_S) {
-            skipc = mapch_l[skipc];
+            skipc = mapch_l[skipc & 0xFF];
             switch (skipc) {
             case '^': /* treat next char as CTL */
-                if (ta = spec_chars[skipc = getcmdc(0) & 0x1f]) {
-                        goto again;
+                skipc = getcmdc(0);
+                skipc &= 0x1f;
+                ta = spec_chars[skipc & 0xFF];
+                if (ta) {
+                    goto again;
                 }
                 break;
 
@@ -655,7 +670,7 @@ again:
             case 'e': /* first char of two-letter E or F command */
             case 'f':
                 /* if one with a text arg */
-                if (spec_chars[getcmdc(0)] &
+                if (spec_chars[getcmdc(0) & 0xFF] &
                         ((skipc == 'e') ? A_E : A_F)) {
                     term = (atsw) ? getcmdc(0) : ESC;
                     atsw = 0;
@@ -682,7 +697,8 @@ again:
 } /* end "skipto()" */
 
 /* find number of characters to next matching (, [, or {  (like '%' in vi) */
-do_ctlp()
+void
+do_ctlp(void)
 {
     int i, l;
     char c, c1;

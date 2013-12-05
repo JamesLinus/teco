@@ -5,23 +5,30 @@
 /* te_exec1.c   continue executing commands   1/8/87 */
 #include "te_defs.h"
 
-prnum(val, base)
-	int val, base;
+static void
+prnum(int val, int base)
 {
     switch (base) {
-    case 8: printf("%o", val); break;
-    case 16: printf("%x", val); break;
-    default: printf("%d", val); break;
+    case 8:
+        printf("%o", val);
+        break;
+    case 16:
+        printf("%x", val);
+        break;
+    default:
+        printf("%d", val);
+        break;
     }
 }
 
-exec_cmds1()
+void
+exec_cmds1(void)
 {
     char command;	/* command character */
     int cond;		/* conditional in progress */
 
     /* operators */
-    switch (command = mapch_l[cmdc]) {
+    switch (command = mapch_l[cmdc & 0xFF]) {
 
     case '+':
         esp->exp = (esp->flag1) ? esp->val1 : 0;
@@ -213,7 +220,7 @@ exec_cmds1()
             cptr.il->dot = cptr.dot;
 
             /* if there is an argument, set the "def iter" flag */
-            if (cptr.il->dflag = esp->flag1) {
+            if ( (cptr.il->dflag = esp->flag1) ) {
                 /* save the count and consume arg */
                 cptr.il->count = esp->val1;
                 esp->flag1 = 0;
@@ -265,7 +272,7 @@ exec_cmds1()
         }
         esp->flag1 = 0;			/* consume argument */
         esp->op = OP_START;
-        switch (mapch_l[getcmdc(trace_sw)]) {
+        switch (mapch_l[getcmdc(trace_sw) & 0xFF]) {
         case 'a':
             cond = isalpha(esp->val1);
             break;
@@ -707,7 +714,7 @@ exec_cmds1()
         }
 
         /* read args and move chars, if any */
-        if (ll = line_args(0, &aa)) {
+        if ( (ll = line_args(0, &aa)) ) {
             /* attach a text buffer to the q register */
             make_buffer(&qreg[mm]);
 
@@ -859,8 +866,9 @@ exec_cmds1()
 /*
  * This just doesn't fit out there on the left-hand margin
  */
-esp->val1 = esp->val1 * 16 + ( (isdigit(aa.p->ch[aa.c])) ?
-aa.p->ch[aa.c] - '0' : mapch_l[aa.p->ch[aa.c]] - 'a' + 10);
+esp->val1 = esp->val1 * 16 + ( isdigit(aa.p->ch[aa.c & 0xFF]) ?
+(aa.p->ch[aa.c & 0xFF] - '0') :
+(mapch_l[aa.p->ch[aa.c & 0xFF] & 0xFF] - 'a' + 10));
                     }		/* end of hex */
                 }		/* end of digit processing */
             }		/* end of "for each char" */

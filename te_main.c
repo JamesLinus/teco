@@ -43,11 +43,15 @@
 * These routines should be compiled and linked to form the TECO executable.
 */
 #include <stdlib.h>
+#include <termcap.h>
 #include "te_defs.h"
 
-main(argc, argv)
-    int argc;			/* arg count */
-    char *argv[];		/* array of string pointers */
+static void save_args(int argc, char **argv, struct qh *q);
+static void read_startup(void), get_term_par(void);
+static void print_string(int arg), cleanup(void);
+
+int
+main(int argc, char **argv)
 {
     /* copy command line to Qz */
     save_args(argc, argv, &qreg[36]);
@@ -65,7 +69,7 @@ main(argc, argv)
     get_term_par();
 
     /* set up error restart */
-    if (terr = setjmp(xxx)) {
+    if ( (terr = setjmp(xxx)) ) {
         /* EOF from standard input - clean up and exit */
         if (terr == E_EFI) {
             goto quit;
@@ -149,7 +153,8 @@ quit:
 
 /* reset screen state, keyboard state; remove open output files */
 
-cleanup()
+static void
+cleanup(void)
 {
     window(WIN_OFF);		/* restore screen */
     setup_tty(TTY_OFF);		/* restore terminal */
@@ -160,9 +165,8 @@ cleanup()
 
 /* print string for error message */
 /* argument is subscript of a qreg qh, prints text from that buffer */
-
-print_string(arg)
-    int arg;
+static void
+print_string(int arg)
 {
     int i, c;
     struct buffcell *p;
@@ -182,10 +186,8 @@ print_string(arg)
 }
 
 /* copy invocation command line to a text buffer */
-save_args(argc, argv, q)
-    int argc;
-    char *argv[];
-    struct qh *q;
+static void
+save_args(int argc, char **argv, struct qh *q)
 {
     char c;
     struct qp ptr;
@@ -226,7 +228,8 @@ save_args(argc, argv, q)
 
 char startup_name[] = "/.tecorc";		/* name of startup file */
 
-read_startup()
+static void
+read_startup(void)
 {
     char *hp, *getenv();
     char fn[CELLSIZE];		/* filename storage */
@@ -237,7 +240,7 @@ read_startup()
     if (!(eisw = fopen(&startup_name[1], "r"))) {
 
         /* if not found, look in home directory */
-        if (hp = getenv("HOME")) {
+        if ( (hp = getenv("HOME")) ) {
 
             /* copy until trailing null */
             for (i = 0; i < CELLSIZE; i++) {
@@ -258,14 +261,15 @@ read_startup()
 }
 
 /* routine to get terminal height and width from termcap */
-get_term_par()
+static void
+get_term_par(void)
 {
     static char lbuff[1024];	/* termcap buffer */
     char *pname;			/* pointer to name of terminal */
     extern char *getenv();
 
     /* read terminal name */
-    if (pname = getenv("TERM")) {
+    if ( (pname = getenv("TERM")) ) {
         /* get entry */
         tgetent(lbuff, pname);
 
@@ -273,6 +277,8 @@ get_term_par()
         set_term_par(tgetnum("li"), tgetnum("co"));
     }
 
-    /* Let SIGIWINCH-type handler have a shot at it */
-    recalc_tsize();
+#ifdef SIGWINCH
+    /* Let SIGWINCH-type handler have a shot at it */
+    recalc_tsize(SIGWINCH);
+#endif
 }

@@ -306,7 +306,7 @@ extern char *errors[];					/* error text						*/
 extern char mapch[], mapch_l[];			/* char mapping tables				*/
 extern char spec_chars[];				/* special character table			*/
 
-extern char skipto(), find_endcond(), getcmdc(), getcmdc0();	/* routines that return chars */
+extern char skipto(),  getcmdc(), getcmdc0();	/* routines that return chars */
 
 extern FILE *eisw;						/* indirect command file pointer	*/
 extern FILE *fopen();
@@ -339,3 +339,49 @@ extern struct exp_entry *esp;		/* expression stack pointer */
 /* backward delete from TTY */
 extern char delchar;
 
+extern void window(int);
+extern void retype_cmdstr(char);
+extern void panic(void);
+extern void crlf(void);
+extern void type_char(char);
+extern void block_inter(int);
+extern void setup_tty(int);
+extern void exec_cmdstr(void);
+extern int peekcmdc(char);
+extern void make_buffer(struct qh *);
+extern void do_ctlp(void);
+extern void exec_cmds1(void);
+extern void set_var(int *);
+extern void do_e(void), do_f(void);
+extern int getqspec(int, char);
+extern void find_enditer(void);
+extern void pop_iteration(int);
+extern int get_value(int);
+extern int lines(int);
+extern void insert1(void);
+extern int fwdc(struct qp *), fwdcx(struct qp *);
+extern void moveuntil(struct qp *from, struct qp *to,
+    char c, int *n, int max, int trace);
+extern void insert2(int);
+extern int line_args(int, struct qp *);
+extern void set_pointer(int, struct qp *);
+extern void delete1(int);
+extern void dly_free_blist(struct buffcell *);
+extern void movenchars(struct qp *from, struct qp *to, int n);
+extern void free_blist(struct buffcell *);
+extern int gettty_nowait(void), gettty(void);
+extern int build_string(struct qh *);
+extern int end_search(int), do_search(int), setup_search(void);
+extern int do_nsearch(char);
+extern void do_o(void);
+extern void write_file(struct qp *, int, int);
+extern int read_file(struct qp *, int *, int);
+extern void do_window(int);
+extern void kill_output(struct outfiledata *);
+extern int do_eq(void), do_en(void);
+extern void vt(int);
+extern int do_fb(void);
+extern int read_cmdstr(void);
+extern void set_term_par(int lines, int cols);
+extern void recalc_tsize(int);
+extern int backc(struct qp *arg);
