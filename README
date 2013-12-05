@@ -7,15 +7,14 @@ Aside from changes needed to port from a BSD environment to a System V
 one, I have fixed a large number of bugs, usually found in the process
 of porting TECO macros.  I have also converted the indentation style to
 fit in a 80-column window, and left out the ^L's which were originally
-entered.  If you don't like the coding style, accept my apologies and
-flames to /dev/null!
+entered.  More recently, I have made the source gcc/clang -Wall
+friendly.
 
 A number of useful macros are in lib/.
 
-This work is provided as-is without any guarantees.  It is the result
-of my own personal work, and does not represent the views or interests
-of my current employer.
+This work is provided as-is without any guarantees, and is
+purley the result of my own personal interests.
 
-					Good luck!
-					Andy Valencia
-					vandys@zendo.com
+Good luck!
+Andy Valencia
+http://www.vsta.org/contact/andy.html
