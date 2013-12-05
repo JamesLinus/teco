@@ -216,25 +216,6 @@ struct is {
     int dflag;		/* definite iteration flag */
 };
 
-/* macro stack entry */ /* not used at present */
-struct ms {
-    struct ms *f;	/* forward pointer */
-    struct ms *b;	/* backward pointer */
-    struct buffcell *p;	/* pointer to a buffer cell */
-    int c;		/* character offset */
-    struct is *il;	/* pointer to iteration list */
-};
-
-/* buffer header list entry */
-struct bh {
-    struct buffcell *f;	/* pointer to buffer */
-    struct buffcell *b;	/* null pointer */
-    int z;		/* number of characters */
-    int v;		/* not used */
-    struct bh *ff;	/* forward pointer */
-    struct bh *bb;	/* backward pointer */
-};
-
 /* define expression stack entry */
 struct exp_entry {
     int val1;		/* first value */
