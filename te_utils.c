@@ -115,15 +115,18 @@ get_dcell()
     return(t);
 }
 
-/* build a buffer:  called with address of a qh */
-/* if no buffer there, get a cell and link it in */
+/*
+ * build a buffer:  called with address of a qh
+ * if no buffer there, get a cell and link it in
+ */
 void
 make_buffer(struct qh *p)
 {
-    if (!(p->f)) {
-        p->f = get_bcell();
-        p->f->b = (struct buffcell *) p;
+    if (p->f) {
+        return;
     }
+    p->f = get_bcell();
+    p->f->b = (struct buffcell *) p;
 }
 
 /* routines to advance one character forward or backward */
