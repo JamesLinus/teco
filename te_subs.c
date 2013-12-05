@@ -5,6 +5,7 @@
  */
 
 /* te_subs.c subroutines  11/8/85 */
+#include <ctype.h>
 #include "te_defs.h"
 
 /*

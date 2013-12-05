@@ -3,6 +3,7 @@
 /* They may be copied if this copyright notice is included */
 
 /* te_exec1.c   continue executing commands   1/8/87 */
+#include <ctype.h>
 #include "te_defs.h"
 
 static void

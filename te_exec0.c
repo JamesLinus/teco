@@ -4,8 +4,9 @@
 
 /* te_exec0.c   execute command string   11/31/86 */
 #include <sys/types.h>
-#include "te_defs.h"
+#include <ctype.h>
 #include <time.h>
+#include "te_defs.h"
 
 void
 exec_cmdstr(void)

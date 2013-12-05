@@ -6,6 +6,7 @@
 
 /* te_srch.c   routines associated with search operations   2/5/86 */
 
+#include <ctype.h>
 #include "te_defs.h"
 
 static int srch_cmp(void);
