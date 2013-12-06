@@ -1,5 +1,5 @@
 /*
- * te_defs.h definitions file		1/9/87
+ * defs.h definitions file		1/9/87
  *
  * TECO for Ultrix   Copyright 1986 Matt Fichtenbaum
  * This program and its components belong to GenRad Inc, Concord MA 01742
