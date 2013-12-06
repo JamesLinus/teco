@@ -101,11 +101,14 @@ get_dcell()
 
             /*
              * Chain the forward pointers together,
-             * make last one's forward pointer NULL
              */
             (t+i)->f = t+i+1;
-            (t+i)->f = NULL;
         }
+
+        /*
+         * make last one's forward pointer NULL
+         */
+        (t+i)->f = NULL;
     }
 
     /* cut out head of "free" list */
