@@ -4,9 +4,9 @@
  * They may be copied if this copyright notice is included
  */
 
-/* te_subs.c subroutines  11/8/85 */
+/* subs.c subroutines  11/8/85 */
 #include <ctype.h>
-#include "te_defs.h"
+#include "defs.h"
 
 /*
  * routines to copy a string of characters

@@ -2,11 +2,11 @@
 /* This program and its components belong to GenRad Inc, Concord MA 01742 */
 /* They may be copied if this copyright notice is included */
 
-/* te_exec0.c   execute command string   11/31/86 */
+/* exec0.c   execute command string   11/31/86 */
 #include <sys/types.h>
 #include <ctype.h>
 #include <time.h>
-#include "te_defs.h"
+#include "defs.h"
 
 void
 exec_cmdstr(void)

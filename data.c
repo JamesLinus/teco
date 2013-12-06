@@ -2,9 +2,9 @@
 /* This program and its components belong to GenRad Inc, Concord MA 01742	*/
 /* They may be copied if this copyright notice is included					*/
 
-/* te_data.c global variables  12/31/85 */
+/* data.c global variables  12/31/85 */
 
-#include "te_defs.h"
+#include "defs.h"
 
 /* error message text */
 char *errors[] =
@@ -179,7 +179,7 @@ char mapch_l[] =
 };
 
 /* table of special characters for "search," "skipto()," and "lines()"	*/
-/* see "te_defs.h for meaning of bits */
+/* see "defs.h for meaning of bits */
 
 char spec_chars[] =
 {

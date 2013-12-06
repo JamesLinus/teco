@@ -4,7 +4,7 @@
  * They may be copied if this copyright notice is included
  */
 
-/* te_main.c  main program  1/14/87 */
+/* main.c  main program  1/14/87 */
 
 /*
 * This is TECO for Ultrix on a Vax.  It is mostly compatible with DEC TECO
@@ -13,38 +13,38 @@
 *
 * This program consists of several source files, as follows:
 *
-* te_main.c (this file)	Main program - initialize, read command line and
+* main.c (this file)	Main program - initialize, read command line and
 *			startup file, handle errors, high-level read and
 *			execute command strings.
 *
-* te_defs.h		Definitions file, to be #included with other files
+* defs.h		Definitions file, to be #included with other files
 *
-* te_data.c		Global variables
+* data.c		Global variables
 *
-* te_rdcmd.c		Read in a command string
+* rdcmd.c		Read in a command string
 *
-* te_exec0.c		First-level command execution - numbers, values,
+* exec0.c		First-level command execution - numbers, values,
 *			assemble expressions
 *
-* te_exec1.c		Most commands
+* exec1.c		Most commands
 *
-* te_exec2.c		"E" and "F" commands, and file I/O
+* exec2.c		"E" and "F" commands, and file I/O
 *
-* te_srch.c		routines associated with "search" commands
+* srch.c		routines associated with "search" commands
 *
-* te_subs.c		higher-level subroutines
+* subs.c		higher-level subroutines
 *
-* te_utils.c		lower-level subroutines
+* utils.c		lower-level subroutines
 *
-* te_chario.c		keyboard (stdin), typeout (stdout), suspend
+* chario.c		keyboard (stdin), typeout (stdout), suspend
 *
-* te_window.c		display window and display special functions
+* window.c		display window and display special functions
 *
 * These routines should be compiled and linked to form the TECO executable.
 */
 #include <stdlib.h>
 #include <termcap.h>
-#include "te_defs.h"
+#include "defs.h"
 
 static void save_args(int argc, char **argv, struct qh *q);
 static void read_startup(void), get_term_par(void);

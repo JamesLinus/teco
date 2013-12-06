@@ -2,7 +2,7 @@
 /* This program and its components belong to GenRad Inc, Concord MA 01742 */
 /* They may be copied if this copyright notice is included */
 
-/* te_chario.c   character I/O routines   10/9/86 */
+/* chario.c   character I/O routines   10/9/86 */
 #include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,7 +10,7 @@
 #include <strings.h>
 #include <termios.h>
 #include <errno.h>
-#include "te_defs.h"
+#include "defs.h"
 
 #include <fcntl.h>
 #ifndef DEBUG

@@ -2,13 +2,13 @@
 /* This program and its components belong to GenRad Inc, Concord MA 01742 */
 /* They may be copied if this copyright notice is included */
 
-/* te_exec2.c   process "E" and "F" commands   2/26/87 */
+/* exec2.c   process "E" and "F" commands   2/26/87 */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "te_defs.h"
+#include "defs.h"
 
 struct qh oldcstring;			/* hold command string during ei */
 

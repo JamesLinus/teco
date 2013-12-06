@@ -3,7 +3,7 @@
  * This program and its components belong to GenRad Inc, Concord MA 01742
  * They may be copied if this copyright notice is included
  *
- * te_window.c   window for teco   10/10/86
+ * window.c   window for teco   10/10/86
  * This attempts to be a real window, without unecessary redraw
  * it is very VT-100 specific, and ought to be rewritten to be general
  */
@@ -20,7 +20,7 @@
 #undef TAB
 #endif /* !VSTA */
 #endif /* SIGWINCH */
-#include "te_defs.h"
+#include "defs.h"
 
 /* maximum screen height and width (horiz and vert, not height and vidth) */
 #define W_MAX_V 70

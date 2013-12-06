@@ -4,10 +4,10 @@
  * They may be copied if this copyright notice is included
  */
 
-/* te_utils.c utility subroutines  10/28/85 */
+/* utils.c utility subroutines  10/28/85 */
 
 #include <stdlib.h>
-#include "te_defs.h"
+#include "defs.h"
 
 /*
  * routines to handle storage

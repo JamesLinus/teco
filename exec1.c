@@ -2,9 +2,9 @@
 /* This program and its components belong to GenRad Inc, Concord MA 01742 */
 /* They may be copied if this copyright notice is included */
 
-/* te_exec1.c   continue executing commands   1/8/87 */
+/* exec1.c   continue executing commands   1/8/87 */
 #include <ctype.h>
-#include "te_defs.h"
+#include "defs.h"
 
 static void
 prnum(int val, int base)

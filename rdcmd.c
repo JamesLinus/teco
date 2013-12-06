@@ -4,8 +4,8 @@
  * They may be copied if this copyright notice is included
  */
 
-/* te_rdcmd.c  read in the command string  12/20/85 */
-#include "te_defs.h"
+/* rdcmd.c  read in the command string  12/20/85 */
+#include "defs.h"
 
 int ccount;				/* count of chars read in */
 
