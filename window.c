@@ -11,14 +11,10 @@
 #include <limits.h>
 #include <string.h>
 #ifdef SIGWINCH
-#ifdef VSTA
-#include <termios.h>
-#else /* !VSTA */
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/termios.h>
 #undef TAB
-#endif /* !VSTA */
 #endif /* SIGWINCH */
 #include "defs.h"
 
@@ -261,9 +257,6 @@ recalc_tsize(int sig)
 {
     int rows, cols;
 
-#ifdef VSTA
-    tcgetsize(2, &rows, &cols);
-#else
     struct winsize w;
 
     if (ioctl(2, TIOCGWINSZ, &w) < 0) {
@@ -274,7 +267,6 @@ recalc_tsize(int sig)
     }
     rows = w.ws_row;
     cols = w.ws_col;
-#endif
     WN_height = rows;
     WN_width = cols;
     window_size = WN_height - WN_scroll;
