@@ -640,9 +640,6 @@ do_eq1(char *shell)
  */
 struct qh en_buf;		/* header for storage for file list */
 struct qp en_ptr;		/* pointer to load/read file list */
-static char glob_cmd0[] = {
-    'g', 'l', 'o', 'b', ' '
-};
 
 int
 do_en(void)
@@ -708,11 +705,9 @@ do_glob(struct qh *lbuff)
     glob_ptr.c = glob_ptr.dot = lbuff->z = lbuff->v = 0;
 
     /* set up "glob filespec" command */
-    for (t = 0; t < 5; t++) {
-        glob_cmd[t] = glob_cmd0[t];
-    }
+    sprintf(glob_cmd, "ls -1 ");
     for (t = 0; t < fbuf.z +1; t++) {
-        glob_cmd[t+5] = fbuf.f->ch[t];
+        glob_cmd[t+6] = fbuf.f->ch[t];
     }
 
     /* make a pipe */
@@ -747,9 +742,13 @@ do_glob(struct qh *lbuff)
         /* read characters from pipe */
         while ((c = getc(xx_out)) != EOF) {
 
-            /* count null chars that separate file specs */
-            if (c == '\0') {
+            /*
+             * count newline chars that separate file specs;
+             *  make it a null char to terminate each filename.
+             */
+            if (c == '\n') {
                 ++lbuff->v;
+                c = '\0';
             }
 
             /* store them in buffer */
@@ -785,7 +784,7 @@ do_glob(struct qh *lbuff)
     close(glob_pipe[1]);
 
     /* execute the "glob" */
-    execl("/bin/csh", "csh", "-fc", glob_cmd, NULL);
+    execl("/bin/sh", "sh", "-c", glob_cmd, NULL);
     fputs("execl failed\n", stderr);
     exit(1);
 }
