@@ -288,7 +288,6 @@ extern struct qp t_qp;	/* temporary buffer pointer */
 extern struct undo
 	*undo_head,	/* Start of undo chain of transactions */
 	*undo;		/* Current position in undo/redo chain */
-extern int tprompts;	/* # times teco has stopped at its prompt */
 
 /* more temporaries */
 extern struct qp aa, bb, cc;
@@ -432,5 +431,6 @@ extern int read_cmdstr(void);
 extern void set_term_par(int lines, int cols);
 extern void recalc_tsize(int);
 extern int backc(struct qp *arg);
+extern void rev_undo(void);
 
 #endif /* TE_DEFS_H */

@@ -20,6 +20,11 @@
 #include <strings.h>
 #include "defs.h"
 
+struct undo *undo, *undo_head;
+
+/* Transaction grouping of undo sets */
+static unsigned int grpid;
+
 /*
  * alloc_undo()
  *	Allocate a new "struct undo" entry
@@ -32,7 +37,7 @@ get_undo(int op)
     bzero(u, sizeof(struct undo));
     u->op = op;
     u->dot = dot;
-    u->grpid = tprompts;
+    u->grpid = grpid;
     return(u);
 }
 
@@ -43,21 +48,27 @@ get_undo(int op)
 void
 add_undo(struct undo *u)
 {
+    struct undo *t;
+
+    ASSERT(u->f == NULL);
+    ASSERT(u->b == NULL);
+
     /* First undo entry in list */
     if (undo_head == NULL) {
 	ASSERT(undo == NULL);
 	undo_head = undo = u;
 	return;
     }
+    ASSERT(undo != NULL);
 
     /* Trim off undo history older than NUNDO */
-    for (t = undo_head; (tprompts - t->grpid) > NUNDO; t = t->f) {
+    for (t = undo_head; (grpid - t->grpid) > NUNDO; t = t->f) {
 	;
     }
-    if (t != undo_head) {
+    if ((t != NULL) && (t != undo_head)) {
 	t->b->f = NULL;
 	t->b = NULL;
-	free_dcell(undo_head);
+	free_dcell((struct qp *)undo_head);
 	undo_head = t;
     }
 
@@ -66,4 +77,34 @@ add_undo(struct undo *u)
 	free_dcell((struct qp *)undo->f);
 	undo->f = NULL;
     }
+
+    /* Add this entry to the tail */
+    undo->f = u;
+    u->b = undo;
+    undo = u;
+}
+
+/*
+ * rev_undo()
+ *	Bump revision number of undo transactions
+ *
+ * Undo/redo is done at the granularity of transactions, by default
+ *  the changes between one teco prompt and the next.  teco macros
+ *  can also bump this value, useful for editor macros.
+ */
+void
+rev_undo(void)
+{
+    /* No undo state, so no need */
+    if (undo == NULL) {
+	return;
+    }
+
+    /* Nothing has happened since the last rev, no need */
+    if (undo->grpid != grpid) {
+	return;
+    }
+
+    /* Ok, advance by one */
+    grpid += 1;
 }
