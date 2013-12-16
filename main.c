@@ -53,6 +53,11 @@ static void print_string(int arg), cleanup(void);
 int
 main(int argc, char **argv)
 {
+#ifdef DEBUG
+    ASSERT(sizeof(struct is) <= sizeof(struct qp));
+    ASSERT(sizeof(struct undo) <= sizeof(struct qp));
+#endif
+
     /* copy command line to Qz */
     save_args(argc, argv, &qreg[36]);
 

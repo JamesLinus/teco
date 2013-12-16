@@ -1,0 +1,4 @@
+There was no API for free'ing dcell's, which means that
+ "struct qp" and "struct is" which are allocated are never
+ available as storage again.  I think this means at least
+ one memory leak, hunt it down.

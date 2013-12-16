@@ -71,16 +71,18 @@ dly_free_blist(struct buffcell *p)
 {
     struct buffcell *t;
 
-    if (p != NULL) {
-        /* find end of ret'd list */
-        for (t = p; t -> f != NULL; t = t -> f) {
-            ;
-        }
-
-        /* put ret'd list at head of "free" list */
-        t->f = dly_freebuff;
-        dly_freebuff = p;
+    if (p == NULL) {
+	return;
     }
+
+    /* find end of ret'd list */
+    for (t = p; t -> f != NULL; t = t -> f) {
+	;
+    }
+
+    /* put ret'd list at head of "free" list */
+    t->f = dly_freebuff;
+    dly_freebuff = p;
 }
 
 /* get a cell */
@@ -116,6 +118,27 @@ get_dcell()
     freedcell = (struct qp *) freedcell->f;
     t->f =  NULL;
     return(t);
+}
+
+/*
+ * free_dcell()
+ *	Return the dcell storage
+ *
+ * A clone of free_blist()
+ */
+void
+free_dcell(struct qp *p)
+{
+    struct qp *t;
+
+    if (p == NULL) {
+	return;
+    }
+    for (t = p; t->f != NULL; t = t->f) {
+	;
+    }
+    t->f = freedcell;
+    freedcell = p;
 }
 
 /*
@@ -312,3 +335,15 @@ peekcmdc(char ch)
     }
     return(1);
 }
+
+#ifdef DEBUG
+/*
+ * blow up on something Really Bad
+ */
+void
+fatal(const char *why)
+{
+    fprintf(stderr, "Fatal error: %s\r\n", why);
+    abort();
+}
+#endif

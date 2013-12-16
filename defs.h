@@ -9,6 +9,13 @@
 #define TE_DEFS_H
 #include <stdio.h>
 
+#ifdef DEBUG
+extern void fatal(const char *);
+#define ASSERT(e) ((e) ? 0 : fatal("assertion failed"))
+#else
+#define ASSERT(d)
+#endif
+
 #include <setjmp.h>
 #define ERROR(e) longjmp(xxx, (e))
 
@@ -22,6 +29,7 @@
 #define TTIBUFSIZE 1024		/* size of type-ahead buffer */
 #define BUFF_LIMIT 16384	/* text buffer soft limit for ED & 4 */
 #define NQREGS 36		/* number of Q registers */
+#define NUNDO (10)		/* recorded levels of undo */
 #define CBUFF 0			/* id for command buffer */
 #define SERBUF NQREGS+1		/* and search string buffer */
 #define FILBUF NQREGS+2		/* and file string buffer */
@@ -216,6 +224,19 @@ struct is {
     int dflag;		/* definite iteration flag */
 };
 
+/* Undo record */
+struct undo {
+    struct undo *f, *b;	/* Forward/back list of changes */
+    int op;		/* Type of change */
+    struct buffcell *p;	/* Text associated with this change, if any */
+    int dot;		/* Position at which this change occurred */
+    int count;		/* Size of change */
+    int grpid;		/* Undo/redo are grouped WRT CLI operations */
+};
+/* Values of undo "op" */
+#define UNDO_DEL (1)	/* This text was deleted */
+#define UNDO_INS (2)	/* This much text was inserted */
+
 /* define expression stack entry */
 struct exp_entry {
     int val1;		/* first value */
@@ -264,6 +285,10 @@ extern int out_noterm;	/* nonzero if standard out is not a term. */
 extern jmp_buf xxx;	/* preserved environment for error restart */
 extern int terr;	/* local error code */
 extern struct qp t_qp;	/* temporary buffer pointer */
+extern struct undo
+	*undo_head,	/* Start of undo chain of transactions */
+	*undo;		/* Current position in undo/redo chain */
+extern int tprompts;	/* # times teco has stopped at its prompt */
 
 /* more temporaries */
 extern struct qp aa, bb, cc;
@@ -332,8 +357,9 @@ extern struct qp *freedcell;
 /* get buffcell routine */
 extern struct buffcell *get_bcell();
 
-/* get data cell routine */
+/* get/return data cell routine */
 extern struct qp *get_dcell();
+extern void free_dcell(struct qp *);
 
 /* the text buffer header */
 extern struct qh buff;

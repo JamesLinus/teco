@@ -51,7 +51,7 @@ sig(int signum, void (*handler)(int))
     struct sigaction sa;
 
     bzero(&sa, sizeof(sa));
-    sa.sa_handler = stp_handler;
+    sa.sa_handler = handler;
     sigaction(signum, &sa, 0);
 }
 

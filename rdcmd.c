@@ -7,7 +7,8 @@
 /* rdcmd.c  read in the command string  12/20/85 */
 #include "defs.h"
 
-int ccount;				/* count of chars read in */
+int ccount;	/* count of chars read in */
+int tprompts;	/* count of times we've stopped at teco prompt */
 
 static int find_lasteol(void);
 
@@ -17,6 +18,8 @@ read_cmdstr(void)
     int c;				/* temporary character */
     int i;				/* temporary */
 
+    tprompts += 1;
+    ASSERT(tprompts > 0);
     goto prompt;
 
     /* prompt again: new line */
