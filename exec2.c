@@ -1285,6 +1285,12 @@ do_fr:		/* entry from FN, F_, and FC */
         /* back dot up over the string */
         dot += ctrl_s;
 
+	/*
+	 * Record replace as delete+insert.
+	 * Here, we note the part being removed.
+	 */
+	undo_del(dot, -ctrl_s);
+
         /* code from "insert1": convert dot to a qp */
         set_pointer(dot, &aa);
 
@@ -1365,6 +1371,9 @@ do_fr:		/* entry from FN, F_, and FC */
             free_blist(bb.p->f);
             bb.p->f = NULL;
         }
+
+	/* Second part of undo: note amount inserted */
+	undo_insert(dot, ins_count);
 
         /* add # of chars inserted */
         z += ins_count;
