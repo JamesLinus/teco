@@ -724,7 +724,7 @@ exec_cmds1(void)
                     bb.p = bb.p->f) {
                 ;
             }
-            bb.c = (colonflag) ? qreg[mm].z % CELLSIZE : 0;
+            bb.c = (colonflag) ? (qreg[mm].z % CELLSIZE) : 0;
 
             movenchars(&aa, &bb, ll);
 
@@ -896,7 +896,7 @@ esp->val1 = esp->val1 * 16 + ( isdigit(aa.p->ch[aa.c & 0xFF]) ?
 
             /* copy the char string */
             moveuntil(&cc, &bb, '\0', &ins_count, CELLSIZE-1, 0);
-            insert2(ins_count);	/* finish the insert */
+            insert2(ins_count);		/* finish the insert */
             esp->flag1 = 0;		/* consume argument */
             esp->op = OP_START;
         }

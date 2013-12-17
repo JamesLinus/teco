@@ -20,7 +20,8 @@
 #include <strings.h>
 #include "defs.h"
 
-struct undo *undo, *undo_head;
+/* Current undo position, and head of list of all recorded undo records */
+static struct undo *undo, *undo_head;
 
 /* Transaction grouping of undo sets */
 static unsigned int grpid;
@@ -29,14 +30,13 @@ static unsigned int grpid;
  * alloc_undo()
  *	Allocate a new "struct undo" entry
  */
-struct undo *
+static struct undo *
 get_undo(int op)
 {
     struct undo *u = (struct undo *)get_dcell();
 
     bzero(u, sizeof(struct undo));
     u->op = op;
-    u->dot = dot;
     u->grpid = grpid;
     return(u);
 }
@@ -45,7 +45,7 @@ get_undo(int op)
  * add_undo()
  *	Put a "struct undo" entry onto the undo/redo chain
  */
-void
+static void
 add_undo(struct undo *u)
 {
     struct undo *t;
@@ -107,4 +107,46 @@ rev_undo(void)
 
     /* Ok, advance by one */
     grpid += 1;
+}
+
+/*
+ * undo_insert()
+ *	Add undo record for insertion of this much text
+ */
+void
+undo_insert(int pos, int nchars)
+{
+    struct undo *u;
+
+    u = get_undo(UNDO_INS);
+    u->dot = pos;
+    u->count = nchars;
+    add_undo(u);
+}
+
+/*
+ * undo_del()
+ *	Add undo record for deletion of this text
+ */
+void
+undo_del(int pos, int nchars)
+{
+    struct undo *u;
+    struct buffcell *bc;
+    struct qp src, dest;
+
+    /* Our undo record */
+    u = get_undo(UNDO_INS);
+    u->dot = pos;
+    u->count = nchars;
+
+    /* Make a snapshot of the deleted chars */
+    set_pointer(pos, &src);
+    bc = dest.p = get_bcell();
+    dest.c = 0;
+    movenchars(&src, &dest, nchars);
+
+    /* Record the change */
+    u->p = bc;
+    add_undo(u);
 }

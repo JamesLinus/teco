@@ -285,9 +285,6 @@ extern int out_noterm;	/* nonzero if standard out is not a term. */
 extern jmp_buf xxx;	/* preserved environment for error restart */
 extern int terr;	/* local error code */
 extern struct qp t_qp;	/* temporary buffer pointer */
-extern struct undo
-	*undo_head,	/* Start of undo chain of transactions */
-	*undo;		/* Current position in undo/redo chain */
 
 /* more temporaries */
 extern struct qp aa, bb, cc;
@@ -354,10 +351,10 @@ extern struct buffcell *dly_freebuff;
 extern struct qp *freedcell;
 
 /* get buffcell routine */
-extern struct buffcell *get_bcell();
+extern struct buffcell *get_bcell(void);
 
 /* get/return data cell routine */
-extern struct qp *get_dcell();
+extern struct qp *get_dcell(void);
 extern void free_dcell(struct qp *);
 
 /* the text buffer header */
@@ -432,5 +429,6 @@ extern void set_term_par(int lines, int cols);
 extern void recalc_tsize(int);
 extern int backc(struct qp *arg);
 extern void rev_undo(void);
+extern void undo_insert(int, int), undo_del(int, int);
 
 #endif /* TE_DEFS_H */

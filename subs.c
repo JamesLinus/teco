@@ -377,6 +377,9 @@ insert1(void)
 void
 insert2(int count)
 {
+    /* Record the change */
+    undo_insert(dot, count);
+
     /* put the new cell where the old one was */
     aa.p->b->f = insert_p;
     insert_p->b = aa.p->b;
@@ -432,6 +435,9 @@ delete1(int nchars)
         /* don't delete beyond end of buffer */
         ERROR(E_POP);
     }
+
+    /* record for undo */
+    undo_del(dot, nchars);
 
     /* pointer to beginning of area to delete */
     set_pointer(dot, &aa);

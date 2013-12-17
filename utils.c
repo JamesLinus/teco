@@ -14,8 +14,8 @@
  * get a buffcell
  * if there are no buffcells available, call malloc for more storage
  */
-struct buffcell*
-get_bcell()
+struct buffcell *
+get_bcell(void)
 {
     struct buffcell *p;
     int i;
@@ -53,16 +53,18 @@ free_blist(struct buffcell *p)
 {
     struct buffcell *t;
 
-    if (p != NULL) {
-         /* find end of ret'd list */
-        for (t = p; t -> f != NULL; t = t -> f) {
-            ;
-        }
-
-        /* put ret'd list at head of "free" list */
-        t->f = freebuff;
-        freebuff = p;
+    if (p == NULL) {
+	return;
     }
+
+    /* find end of ret'd list */
+    for (t = p; t->f != NULL; t = t->f) {
+	;
+    }
+
+    /* put ret'd list at head of "free" list */
+    t->f = freebuff;
+    freebuff = p;
 }
 
 /* free a list of buffcells to the "delayed free" list */
@@ -88,7 +90,7 @@ dly_free_blist(struct buffcell *p)
 /* get a cell */
 /* if there are no cells available, get a buffcell and make more */
 struct qp *
-get_dcell()
+get_dcell(void)
 {
     struct qp *t;
     int i;
