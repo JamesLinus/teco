@@ -118,6 +118,7 @@ extern void fatal(const char *);
 #define E_IAA 43
 #define E_AMB 44
 #define E_SYS 45
+#define E_UND 46
 
 /* define names for window control registers */
 #define WN_type win_data[0]
@@ -227,7 +228,8 @@ struct is {
 /* Undo record */
 struct undo {
     struct undo *f, *b;	/* Forward/back list of changes */
-    int op;		/* Type of change */
+    short op;		/* Type of change */
+    short flags;	/* undo usage state */
     struct buffcell *p;	/* Text associated with this change, if any */
     int dot;		/* Position at which this change occurred */
     int count;		/* Size of change */
@@ -236,6 +238,8 @@ struct undo {
 /* Values of undo "op" */
 #define UNDO_DEL (1)	/* This text was deleted */
 #define UNDO_INS (2)	/* This much text was inserted */
+/* Bits in "flags" */
+#define UNDOF_UNDONE (0x01)	/* This undo event is not in buffer */
 
 /* define expression stack entry */
 struct exp_entry {
@@ -405,7 +409,7 @@ extern void insert1(void);
 extern int fwdc(struct qp *), fwdcx(struct qp *);
 extern void moveuntil(struct qp *from, struct qp *to,
     char c, int *n, int max, int trace);
-extern void insert2(int);
+extern void insert2(int, int);
 extern int line_args(int, struct qp *);
 extern void set_pointer(int, struct qp *);
 extern void delete1(int);
@@ -428,7 +432,10 @@ extern int read_cmdstr(void);
 extern void set_term_par(int lines, int cols);
 extern void recalc_tsize(int);
 extern int backc(struct qp *arg);
+
+/* Stuff from undo.c */
 extern void rev_undo(void);
 extern void undo_insert(int, int), undo_del(int, int);
+extern void roll_back(void), roll_forward(void);
 
 #endif /* TE_DEFS_H */

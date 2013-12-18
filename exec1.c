@@ -568,7 +568,7 @@ exec_cmds1(void)
             /* indicate advance over that many chars */
             cptr.dot += ins_count;
         }
-        insert2(ins_count);		/* finish insert */
+        insert2(ins_count, 1);		/* finish insert */
         getcmdc(trace_sw);		/* flush terminating char */
 
         /* clear args */
@@ -754,7 +754,7 @@ exec_cmds1(void)
                  */
                 insert1();
                 movenchars(&cc, &bb, qreg[mm].z);
-                insert2(qreg[mm].z);
+                insert2(qreg[mm].z, 1);
             }
         }
         colonflag = 0;
@@ -896,7 +896,7 @@ esp->val1 = esp->val1 * 16 + ( isdigit(aa.p->ch[aa.c & 0xFF]) ?
 
             /* copy the char string */
             moveuntil(&cc, &bb, '\0', &ins_count, CELLSIZE-1, 0);
-            insert2(ins_count);		/* finish the insert */
+            insert2(ins_count, 1);	/* finish the insert */
             esp->flag1 = 0;		/* consume argument */
             esp->op = OP_START;
         }

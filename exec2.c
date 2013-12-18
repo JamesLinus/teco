@@ -1383,6 +1383,27 @@ do_fr:		/* entry from FN, F_, and FC */
         esp->op = OP_START;
         break;
 
+    case 'u':		/* Control undo */
+
+	/* Unexpected modifiers */
+	if (esp->flag2 || colonflag) {
+            ERROR(E_UND);
+	}
+
+	/* fu, -1fu -- roll back one level */
+	if ((!esp->flag1) || (esp->val1 == -1)) {
+	    roll_back();
+
+	/* 1fu -- roll forward one previously undone level */
+	} else if (esp->val1 == 1) {
+	    roll_forward();
+
+	/* Unknown */
+	} else {
+            ERROR(E_UND);
+	}
+	break;
+
     default:
         ERROR(E_IFC);
     }

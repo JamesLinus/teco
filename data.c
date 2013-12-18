@@ -53,7 +53,8 @@ char *errors[] =
     "EOF read from std input",
     "Invalid A arg",
     "Ambiguous file specification ",
-    "System fork or pipe error"
+    "System fork or pipe error",
+    "Invalid undo arg"
 };
 
 /* declare global variables */

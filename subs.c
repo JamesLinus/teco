@@ -375,10 +375,12 @@ insert1(void)
 
 /* count is the number of chars added */
 void
-insert2(int count)
+insert2(int count, int undoable)
 {
     /* Record the change */
-    undo_insert(dot, count);
+    if (undoable) {
+	undo_insert(dot, count);
+    }
 
     /* put the new cell where the old one was */
     aa.p->b->f = insert_p;
