@@ -17,7 +17,7 @@ read_cmdstr(void)
     int c;				/* temporary character */
     int i;				/* temporary */
 
-    rev_undo();
+    rev_undo(1);
     goto prompt;
 
     /* prompt again: new line */

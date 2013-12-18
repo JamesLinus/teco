@@ -337,6 +337,8 @@ getqspec(int fors, char c)
         }
     }
     ERROR(E_IQN);
+    /*NOTREACHED*/
+    return(0);
 }
 
 /*

@@ -16,8 +16,8 @@ extern void fatal(const char *);
 #define ASSERT(d)
 #endif
 
-#include <setjmp.h>
-#define ERROR(e) longjmp(xxx, (e))
+extern void teco_error(int);
+#define ERROR(e) (teco_error(e))
 
 #define CTL(x) ((x) & 0x1f)	/* for control chars */
 #define BLOCKSIZE (0x10000 - 8)	/* size of memory block to allocate */
@@ -286,7 +286,6 @@ extern char lastc;	/* last char read */
 extern int ttyerr;	/* error return from ioctl */
 extern int inp_noterm;	/* nonzero if standard in is not a terminal */
 extern int out_noterm;	/* nonzero if standard out is not a term. */
-extern jmp_buf xxx;	/* preserved environment for error restart */
 extern int terr;	/* local error code */
 extern struct qp t_qp;	/* temporary buffer pointer */
 
@@ -434,7 +433,7 @@ extern void recalc_tsize(int);
 extern int backc(struct qp *arg);
 
 /* Stuff from undo.c */
-extern void rev_undo(void);
+extern void rev_undo(int);
 extern void undo_insert(int, int), undo_del(int, int);
 extern void roll_back(void), roll_forward(void);
 

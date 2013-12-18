@@ -44,11 +44,15 @@
 */
 #include <stdlib.h>
 #include <termcap.h>
+#include <setjmp.h>
 #include "defs.h"
 
 static void save_args(int argc, char **argv, struct qh *q);
 static void read_startup(void), get_term_par(void);
 static void print_string(int arg), cleanup(void);
+
+/* Error recovery vector */
+static jmp_buf err_jump;
 
 int
 main(int argc, char **argv)
@@ -74,7 +78,7 @@ main(int argc, char **argv)
     get_term_par();
 
     /* set up error restart */
-    if ( (terr = setjmp(xxx)) ) {
+    if ( (terr = setjmp(err_jump)) ) {
         /* EOF from standard input - clean up and exit */
         if (terr == E_EFI) {
             goto quit;
@@ -286,4 +290,13 @@ get_term_par(void)
     /* Let SIGWINCH-type handler have a shot at it */
     recalc_tsize(SIGWINCH);
 #endif
+}
+
+/*
+ * Jump out on teco error code
+ */
+void
+teco_error(int why)
+{
+    longjmp(err_jump, why);
 }

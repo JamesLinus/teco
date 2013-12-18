@@ -90,7 +90,6 @@ struct exp_entry *esp;			/* expression stack pointer */
 int char_count = 0;	/* char count for tab typer */
 char lastc = ' ';	/* last char read */
 int ttyerr;		/* error return from ioctl */
-jmp_buf xxx;		/* preserved environment for error restart */
 int terr;		/* local error code */
 struct qp t_qp;		/* temporary buffer pointer */
 struct qp aa, bb, cc;	/* more temporaries */

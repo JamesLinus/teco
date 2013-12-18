@@ -1385,13 +1385,20 @@ do_fr:		/* entry from FN, F_, and FC */
 
     case 'u':		/* Control undo */
 
-	/* Unexpected modifiers */
-	if (esp->flag2 || colonflag) {
+	/* Unexpected modifier */
+	if (esp->flag2) {
             ERROR(E_UND);
 	}
 
+	/* Modify overall undo state */
+	if (colonflag) {
+	    if (esp->flag1 || esp->flag2) {
+		ERROR(E_UND);
+	    }
+	    rev_undo(colonflag);
+
 	/* fu, -1fu -- roll back one level */
-	if ((!esp->flag1) || (esp->val1 == -1)) {
+	} else if ((!esp->flag1) || (esp->val1 == -1)) {
 	    roll_back();
 
 	/* 1fu -- roll forward one previously undone level */

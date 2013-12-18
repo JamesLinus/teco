@@ -1,6 +1,6 @@
 !A startup file for TECO.  Provides: !
 ! +line to start up at a line number !
-! "tecon" invokation to inhibit startup file !
+! "tecon" invocation to inhibit startup file !
 ! -n to inhibit visual mode !
 ! Appropriate handling for read-only files !
 

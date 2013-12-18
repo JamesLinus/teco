@@ -98,15 +98,32 @@ add_undo(struct undo *u)
  * Undo/redo is done at the granularity of transactions, by default
  *  the changes between one teco prompt and the next.  teco macros
  *  can also bump this value, useful for editor macros.
+ *
+ * When passed a value of 1, advance to next generation of
+ *  changes.  When passed 2, clear all undo state and start
+ *  from scratch.
  */
 void
-rev_undo(void)
+rev_undo(int op)
 {
     struct undo *t;
 
     /* No undo state, so no need */
     if (undo == NULL) {
 	return;
+    }
+
+    /* Clear undo state */
+    if (op == 2) {
+	free_undo(undo_head);
+	undo_head = undo = NULL;
+	grpid = 0;
+	return;
+    }
+
+    /* Rev undo state forward */
+    if (op != 1) {
+	ERROR(E_UND);
     }
 
     /* Nothing has happened since the last rev, no need */
