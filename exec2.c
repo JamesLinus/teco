@@ -1409,6 +1409,9 @@ do_fr:		/* entry from FN, F_, and FC */
 	} else {
             ERROR(E_UND);
 	}
+
+	/* Consume arguments */
+        esp->flag1 = esp->flag2 = colonflag = 0;
 	break;
 
     default:
