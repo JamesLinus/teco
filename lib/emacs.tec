@@ -1,6 +1,14 @@
 !* emacs.tec--do emacs-style motion and editing in TECO !
 !*  Clearly not a complete emulation, but sometimes convenient !
 !*  for moving about. !
+!* Textual Q registers: !
+!*  k holds the kill buffer text !
+!* Numberic Q registers: !
+!*  a - currently typed char !
+!*  b,c - scratch !
+!*  d - "other" position mark !
+!*  e - Last ^k position !
+!*  f - Last command char !
 @^ue\
 
 !* Preserve Q registers !
@@ -22,9 +30,6 @@ et#40et
 !* endless loop for commands !
 <
 
- !* advance undo versioning !
- :fu
-
  !* Read key into Qa, update and sleep if none available !
  ^tua qa+1"e 1w et-32et ^tua et#40et'
 
@@ -32,7 +37,18 @@ et#40et
  %e
 
  !* If text, insert and iterate !
- qa-31"g qai f<'
+ qa-31"g
+  qf-32"l :fu' !* Moving from command to insert, rev undo !
+  qauf
+  qai
+  f<'
+
+ !* Rev undo version when distinct command. !
+ !* This lets d/k's group together !
+ !* Group <return> with textual input !
+ qa-13"e qf-32"l :fu qauf | 32uf '
+  |  qa= qa-qf"n :fu qauf '
+ '
 
  !* Map delete key to erase !
  qa-127"e -1d f<'
@@ -96,7 +112,9 @@ et#40et
 !CM!
  1ur
  @i/
-/ f<
+/
+ ^t !* Throw away the synthesized LF !
+ f<
 
 !CN!
  .ua 0l qa-.ub
