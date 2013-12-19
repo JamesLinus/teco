@@ -26,7 +26,7 @@ void
 exec_cmds1(void)
 {
     char command;	/* command character */
-    int cond;		/* conditional in progress */
+    int cond = 0;	/* conditional in progress */
 
     /* operators */
     switch (command = mapch_l[cmdc & 0xFF]) {

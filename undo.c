@@ -31,13 +31,15 @@ static unsigned int grpid;
  *	Allocate a new "struct undo" entry
  */
 static struct undo *
-get_undo(int op)
+get_undo(int op, int pos, int nchars)
 {
     struct undo *u = (struct undo *)get_dcell();
 
     bzero(u, sizeof(struct undo));
     u->op = op;
     u->grpid = grpid;
+    u->dot = pos;
+    u->count = nchars;
     return(u);
 }
 
@@ -159,9 +161,7 @@ undo_insert(int pos, int nchars)
 {
     struct undo *u;
 
-    u = get_undo(UNDO_INS);
-    u->dot = pos;
-    u->count = nchars;
+    u = get_undo(UNDO_INS, pos, nchars);
     add_undo(u);
 }
 
@@ -177,9 +177,7 @@ undo_del(int pos, int nchars)
     struct qp src, dest;
 
     /* Our undo record */
-    u = get_undo(UNDO_INS);
-    u->dot = pos;
-    u->count = nchars;
+    u = get_undo(UNDO_DEL, pos, nchars);
 
     /* Make a snapshot of the deleted chars */
     set_pointer(pos, &src);

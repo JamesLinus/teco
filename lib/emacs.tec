@@ -22,6 +22,9 @@ et#40et
 !* endless loop for commands !
 <
 
+ !* advance undo versioning !
+ :fu
+
  !* Read key into Qa, update and sleep if none available !
  ^tua qa+1"e 1w et-32et ^tua et#40et'
 
@@ -125,6 +128,12 @@ et#40et
 !CX!
  !* ^X-char; get next char to complete command !
  ^tua qa+1"e 1w et-32et ^tua et#40et'
+
+ !* ^X-u, undo !
+ qa-^^u"e -1fu f<'
+
+ !* ^X-r, redo !
+ qa-^^r"e 1fu f<'
 
  !* ^X-^X, swap point and mark !
  qa-24"e .ua qdj qaud f<'
