@@ -604,8 +604,8 @@ do_o(void)
  * stops in ! if argument is nonzero
  * returns character found, and leaves it in skipc
  */
-char skipto(arg)
-    int arg;
+char
+skipto(int arg)
 {
     int atsw;		/* "at" prefix */
     char ta, term;		/* temp attributes, terminator */

@@ -431,6 +431,7 @@ extern int read_cmdstr(void);
 extern void set_term_par(int lines, int cols);
 extern void recalc_tsize(int);
 extern int backc(struct qp *arg);
+extern char skipto(int);
 
 /* Stuff from undo.c */
 extern void rev_undo(int);
