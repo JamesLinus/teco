@@ -14,4 +14,4 @@ clean:
 	rm -f core *.o tags
 
 clobber: clean
-	rm -f te teco
+	rm -f te teco lib/tecorc
