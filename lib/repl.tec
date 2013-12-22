@@ -1,34 +1,31 @@
-! mi--Interpolate reply from MH !
+!* mi--Prep email reply made by MH !
+!* qa - Beginning of message body !
 @i\
- [a
- ! Read in file !
- zj.ua
- :@er/@/"f
-  Interpolation not possible
-   ^C
- '
- a
 
- ! Trim headers off !
- qaj
- :@s/
+!* Jump to body of message !
+0j @s/
+----/ 0l l .ua
 
-/"s
-  qa-.d
- '
- ! Put marker on each line of text !
- <i>l.-z;>
- ]a
- zj
+!* Break up quoted blocks by blank lines !
+< ::@s/> 
+/"s .ub 0l -l qb-.-2d ' l .-z; >
 
- ! Move to head of text !
- -@s/
---------
-/0l
+!* (re)format each quoted block !
+qaj [a
+<
+ !* Advance to next quoted block !
+ < ::@s/> /"s 0l 1;' l .-z; >
 
- ! Insert white space for us to type into !
- @i/
+ !* Format this paragraph !
+  mf
 
+ !* Advance to next blank line or EOF !
+ < ::@s/
+/ :; l .-z; >
+ .-z;
+>
 
-/-2l
+!* Back up to top !
+]a qaj
+
 \

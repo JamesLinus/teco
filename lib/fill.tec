@@ -3,10 +3,12 @@
 !* Textual Q regs: !
 !*  t - current word being filled into output !
 !*  u - list of space chars !
+!*  v - prefix text on each line !
 !* Number Q regs: !
 !*  a - current position in input !
 !*  b - end position of input !
 !*  c - current output column !
+!*  d - flag first word in line !
 !*  p - current output position !
 !*  s - position of start of input !
 @^uf\
@@ -14,56 +16,44 @@
 qa"e 70um | qaum '
 
 !* Save text registers we scribble on !
-[t[u
+[t[u[v[w
 
-!* Decimal !
-^D
+!* Leading quotation? !
+0l ::@s/> /"s 0l
+ !* Record prefix !
+ @^uv/> /
 
-!* Move to beginning of paragraph !
+ !* Identify paragraph to fill by presence of quotations !
+ < ::@s/> /"u 1l 1; ' 0l ."e 1; ' -l > .ua
+ < .-z"e 1; ' ::@s/> /; 1l > .ub
+|
+ !* No prefix !
+ @^uv//
 
-!* Move to first line which doesn't start with text !
-<
- !* Move to start of line !
- 0l
+ !* Find paragraph by block of text, all starting with alnum !
 
- !* Leave loop when line doesn't start with alphanum !
- ::@s/R/;
+ !* Find start of this paragraph !
+ <
+  ::@s/R/"u
+   !* Failing line included if indented (leading spaces) !
+   ::@s/S/"u 1l ' 1;
+  '
+  0l ."e 1; ' -1l
+ > .ua
 
- !* Back up another line !
- -l
-
- !* Exit at start of buffer !
- ."e 1;'
->
-
-!* Don't include line unless it's just leading white space !
-."g
- 0l::@s/S/"u 1l'
+ !* Walk forward to line without alnum header !
+ < l ::@s/R/; > .ub
 '
-0l
-
-!* Record position in QAn, also QSn so can delete when done !
-.ua
-qaus
-
-!* Move to end of paragraph !
-<
- !* Move to start of line !
- 0l
-
- !* Leave loop when line doesn't start with alphanum !
- ::@s/R/;
-
- !* Forward a line !
- l
->
-
-!* End position in QBn !
-.ub
 
 !* Avoid zero-length operations !
 qa-qb"e Empty paragraph specified
- ^c'
+ ^c '
+
+!* text to fill is in qa..qb !
+!* qv has any prefix/quotation string !
+
+!* Start of range in qs, so we can delete original text after fill !
+qaus
 
 !* Build the filled text right below the unfilled text, jumping back !
 !* and forth !
@@ -72,33 +62,38 @@ qa-qb"e Empty paragraph specified
 qbup
 !* QCn is our current output column !
 0uc
+!* Start of line--first word being added !
+1ud
+!* Set QU to white space chars , QW to white plus newline !
+@^uu/ 	/
+@^uw/ 	
+/
+
+!* Honor leading quote !
+:qv%a  qpj gv .up :qvuc
 
 !* Honor leading white space !
 qaj
 <
- ::@s/S/;
+ ::@s/gu/;
  1r
  ::@s/	/"s 8%c | 1%c 1c '
 >
-!* Copy white space into output, skip past it !
-!* Move text via QT !
-qa,.xt
-.ua
+!* Copy leading white space via qt !
+qa,.xt .ua
 qpj gt .up
-
-!* Set QU to white space chars !
-@^uu/ 	
-/
 
 !* While words, assemble and fill !
 <
  !* Skip leading white space !
  qaj
  <::@s/gu/;>
- .ua
+ !* At new line, skip any quote !
+ ::@s/^EL/"s 1l .-qb"l  :qvc ' '
 
  !* Walk across word, pull into QT !
- <::@s/gu/"s 1r 1; | 1c'>
+ .ua
+ <::@s/gw/"s 1r 1; | 1c '>
  qa,.xt
  .ua
 
@@ -108,17 +103,19 @@ qpj gt .up
  !* If it won't fit on the line, terminate current line and start over !
  qc+:qt+1-qm"g
   qpj @i/
-/ 0uc .up
+/ gv :qvuc .up 1ud
+ '
+
+ !* Put space(s) between words !
+ qpj qd"e
+  1r @::s/./"s @i/ / 1%c | 1c ' !* Two spaces between sentences !
+  @i/ / 1%c !* Space between words !
+ | 0ud
  '
 
  !* Add in our word, update column counter !
- qpj
- qc"g
-  1r @::s/./"s @i/ / 1%c | 1c' !* Two spaces between sentences !
-  @i/ / 1%c !* Space between words !
- '
  gt .up
- :qt%c
+ :qt%c 
 >
 
 !* Chop off unfilled text, add trailing newline !
@@ -129,6 +126,6 @@ qs,qbk
 qsj
 
 !* Restore text registers we scribble on !
-]u]t
+]u]t]v]w
 \
 
