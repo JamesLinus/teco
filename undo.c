@@ -229,10 +229,10 @@ roll_back(void)
 	/* Put chars back into text buffer */
 	uc = undo->count;
 	if (undo->op == UNDO_DEL) {
-	    cc.p = undo->p;
-	    cc.c = 0;
+	    src.p = undo->p;
+	    src.c = 0;
 	    insert1();
-	    movenchars(&cc, &bb, uc);
+	    movenchars(&src, &bb, uc);
 	    insert2(uc, 0);
 
 	/* Remove chars from text buffer */
@@ -254,6 +254,7 @@ roll_back(void)
 	    set_pointer(dot + uc, &src);
 	    movenchars(&src, &dest, z - (dot + uc));
 	    free_blist(dest.p->f);
+	    dest.p->f = NULL;
 	    z -= uc;
 
 	/* Shouldn't happen */
@@ -336,15 +337,16 @@ roll_forward(void)
 	    set_pointer(dot + uc, &src);
 	    movenchars(&src, &dest, z - (dot + uc));
 	    free_blist(dest.p->f);
+	    dest.p->f = NULL;
 	    z -= uc;
 
 	/* Make the insertion happen again */
 	} else if (undo->op == UNDO_INS) {
 	    ASSERT(undo->p);
-	    cc.p = undo->p;
-	    cc.c = 0;
+	    src.p = undo->p;
+	    src.c = 0;
 	    insert1();
-	    movenchars(&cc, &bb, uc);
+	    movenchars(&src, &bb, uc);
 	    insert2(uc, 0);
 
 	/* Shouldn't happen */
