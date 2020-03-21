@@ -1506,7 +1506,7 @@ w_setptr(int loc, struct qp *pp)
         pp->c = loc % CELLSIZE;
         pp->dot = loc;
     }
-    return( (int) buff.f);
+    return( !!buff.f);
 }
 
 /*

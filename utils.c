@@ -260,7 +260,7 @@ set_pointer(int pos, struct qp *ptr)
  * routines type characters as read, if argument != 0
  */
 char
-getcmdc0(trace)
+getcmdc0(int trace)
 {
     /* if at end of this level, pop macro stack */
     while (cptr.dot >= cptr.z) {
@@ -300,7 +300,7 @@ getcmdc0(trace)
 }
 
 char
-getcmdc(trace)
+getcmdc(int trace)
 {
     if (cptr.dot++ >= cptr.z) {
         ERROR((msp <= &mstack[0]) ? E_UTC : E_UTM);
