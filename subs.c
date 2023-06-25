@@ -347,7 +347,7 @@ getqspec(int fors, char c)
  * leaves bb pointing to end of that text
  * insert2() copies rest of buffer
  */
-struct buffcell *insert_p;
+extern struct buffcell *insert_p;
 void
 insert1(void)
 {
